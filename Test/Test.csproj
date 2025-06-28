@@ -1,0 +1,39 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+      
+        <OutputType>Exe</OutputType>
+        <TargetFramework>net8.0-windows</TargetFramework>
+        <OutputPath>bin\</OutputPath>
+        <RuntimeIdentifier>win-x64</RuntimeIdentifier>
+
+        <ImplicitUsings>disable</ImplicitUsings>
+        <Nullable>enable</Nullable>
+    </PropertyGroup>
+
+    <ItemGroup>
+      <Compile Remove="temp\**" />
+      <EmbeddedResource Remove="temp\**" />
+      <None Remove="temp\**" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <ProjectReference Include="..\ScriptCompiler.csproj" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <Reference Include="Ephemera.NBagOfTricks">
+        <HintPath>..\lib\Ephemera.NBagOfTricks.dll</HintPath>
+      </Reference>
+    </ItemGroup>
+
+    <ItemGroup>
+      <None Update="Utils.sctest">
+        <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+      </None>
+      <None Update="Varation999.sctest">
+        <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+      </None>
+    </ItemGroup>
+
+</Project>
