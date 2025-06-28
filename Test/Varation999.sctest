@@ -1,76 +1,36 @@
 
 ///// Directives/preprocess: Include config and lib files. /////
-Include("Utils.sctest");
+Include("Utils.sctest"); TODO1 needss path
 
+something custom => cheeseburger
 
-///// All the channel/outputs.
-// Channel("keys",  "midiout", 1,  "AcousticGrandPiano");
-// Channel("bass",  "midiout", 2,  "AcousticBass");
-// Channel("synth", "midiout", 3,  "Lead1Square");
-// Channel("drums", "midiout", 10, "Jazz"); // for drums = kit
-
-SkyColor = "green";
-//Start = DateTime.Now();
 
 public class Varation999 : ScriptBase
 {
     Utils u = new();
 
-    // // Volumes.
-    // const double KEYS_VOL = 0.8;
-    // const double DRUM_VOL = 0.8;
-
-    // Compiler tests.
-    //unknown statement
-    //int _unused = 48;
-
-    // // Simple variables for functions.
-    // List<int> scaleNotes;
-    // List<int> chordNotes;
-    // List<int> myChordNotes;
-    // List<int> myScaleNotes;
-
-    ////////////////// overrides /////////////////////////////
-    public override int Setup(int worldX, int worldY)
+    ////////////////// required overrides /////////////////////////////
+    public override int Setup()
     {
-        // // Create sets of notes.
-        // CreateNotes("MY_SCALE", "1 3 4 b7");
-        // myScaleNotes = GetNotesFromString("B4.MY_SCALE");
-        // // Get some stock chords and scales.
-        // scaleNotes = GetNotesFromString("G3.Algerian");
-        // chordNotes = GetNotesFromString("C4.o7");
+        worldX = 100;
+        worldY = 50;
+
+        CreatePlayer(Player.Oligarch, "Vladimir");
+        CreatePlayer(Player.Sycophant, "Donald");
+        CreatePlayer(Player.Rebel, "Volodymyr ");
+        CreatePlayer(Player.Peon, "Bob");
 
         bool b = u.Boing(60);
 
-        // BuildComp();
-
-        return -1;
+        return 0;
     }    
 
-
-
-    public override int CreatePlayer(Player which)
+    // public override int MovePlayer(Player which, string location, int strength)
+    public override int Move()
     {
+        // TODO something...
 
-        return -1;
-    }
-
-    public override int MovePlayer(Player which, string location, int strength)
-    {
-
-        return -1;
-    }
-
-    public override int Negotiate(Player with)
-    {
-
-        return -1;
-    }
-
-    public override int Invade(string location)
-    {
-
-        return -1;
+        return 0;
     }
 }
     

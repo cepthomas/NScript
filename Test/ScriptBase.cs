@@ -7,62 +7,61 @@ using System.Text;
 using System.Threading.Tasks;
 using System.IO;
 using Ephemera.NBagOfTricks;
-using Ephemera.ScriptCompiler;
+using Ephemera.NScript;
 
 
 namespace Test
 {
     /////////////////// All the stuff to do app specific work ///////////////////
-    // Define my script type api - as virtual members
+    // Define script type api - as virtual members
     // Store script data
     // Do runtime work/processing.
 
-    public enum Player { Oligarch, Sycophant, Rebel, Peon }
+    public enum Role { Oligarch, Sycophant, Rebel, Peon }
 
-    //public partial class ScriptBase
+
+    //protected partial class ScriptBase
     public class ScriptBase
     {
-        #region Properties - dynamic things shared between host and script at runtime
-        /// <summary>Main -> Script</summary>
-        public double RealTime { get; set; } = 0.0;
+        #region Fields accessible by implementations
+        protected int worldX;
+
+        protected int worldY;
+
+        protected Dictionary<string, Role> players = [];
+        #endregion
+
+        #region Application => Game
+
+        public virtual int Setup()
+        {
+            throw new NotImplementedException();
+        }
+
+        // protected int MovePlayer(Role which, string location, int strength)
+        public virtual int Move()
+        {
+            throw new NotImplementedException();
+        }
 
         #endregion
 
-
-        public virtual int Setup(int worldX, int worldY)
+        #region Game => Application
+        protected void CreatePlayer(Role role, string name)
         {
-            throw new NotImplementedException();
-        }
-
-        public virtual int CreatePlayer(Player which)
-        {
-            throw new NotImplementedException();
-        }
-
-        public virtual int MovePlayer(Player which, string location, int strength)
-        {
-            throw new NotImplementedException();
-        }
-
-        public virtual int Negotiate(Player with)
-        {
-            throw new NotImplementedException();
-        }
-
-        public virtual int Invade(string location)
-        {
-            throw new NotImplementedException();
+            players.Add(name, role);
         }
 
 
-        // /// <summary>
-        // /// Set up runtime stuff.
-        // /// </summary>
-        // /// <param name="channels">All output channels.</param>
-        // public void Init(Dictionary<string, Channel> channels)
+        // protected virtual int Negotiate(Role with)
         // {
-        //     _channels = channels;
+        //     //throw new NotImplementedException();
         // }
 
+        // protected virtual int Invade(string location)
+        // {
+        //     //throw new NotImplementedException();
+        // }
+        #endregion
     }
 }

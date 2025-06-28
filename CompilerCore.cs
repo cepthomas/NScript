@@ -129,7 +129,7 @@ namespace Ephemera.NScript
 
         #region Public functions
         /// <summary>
-        /// Run the compiler on a sript file.
+        /// Run the compiler on a script file.
         /// </summary>
         /// <param name="scriptfn">Fully qualified path to main file.</param>
         public void CompileScript(string scriptfn)

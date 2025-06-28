@@ -73,85 +73,39 @@ namespace Test
         }";
     }
 
-    public class COMP_CUSTOM : TestSuite
+    public class COMP_APP : TestSuite
     {
         public override void RunSuite()
         {
             UT_INFO("Tests script compiler using example file.");
+            UT_INFO("This essentially defines ohow a host application loads and runs scripts.");
 
-            // // Compile script.
-            // CompilerCore compiler = new();
-
-            //var startFolder = GetSourceDir();
-
-            // compiler.CompileText(code);
-
-            //UT_EQUAL(compiler.Results.Count, 1);
-
-            bool ok = true;
+            var ok = true;
 
             // Compile script.
             MyCompiler compiler = new();
 
-
             compiler.CompileScript(Path.Combine(MiscUtils.GetSourcePath(), "Varation999.sctest"));
-
-            compiler.Results.ForEach(res => UT_INFO($"{res}"));
-            //compiler.Results.ForEach(res => UT_INFO($"{res.ResultType}({res.LineNumber}) [{res.Message}]"));
-            //>>>
-            //Suite COMP_CUSTOM
-            //Tests script compiler using example file.
-            //Info NA(-1) [Compiling C:\Dev\Libs\ScriptCompiler\Test\Varation999.sctest.]
-            //Error C:\Dev\Libs\ScriptCompiler\Test\Varation999.sctest(3) [Invalid Include: Include("Utils.sctest");]
-            //Error NA(-1) [Exception: Could not find file 'C:\Dev\Libs\ScriptCompiler\Test\bin\net8.0-windows\win-x64\NAudio.dll'.]
-            //Info NA(-1) [Compile script took 52 msec.]
-
 
             if (compiler.Script is null)
             {
                 // It failed.
+                compiler.Results.ForEach(res => UT_INFO($"{res}"));
                 return;
             }
 
             var script = compiler.Script as ScriptBase;
 
-
-            UT_TRUE(ok);
-
-            //// Log compiler results.
-            //compiler.Results.ForEach(r =>
-            //{
-            //    string msg = r.SourceFile != "" ? $"{Path.GetFileName(r.SourceFile)}({r.LineNumber}): {r.Message}" : r.Message;
-            //    switch (r.ResultType)
-            //    {
-            //        case CompileResultType.Error: _logger.Error(msg); break;
-            //        case CompileResultType.Warning: _logger.Warn(msg); break;
-            //        default: _logger.Info(msg); break;
-            //    }
-            //});
-
+            // Run the game loop.
             // Need exception handling here to protect from user script errors.
             try
             {
-                // Init shared vars.
-                //InitRuntime();
-                // void InitRuntime()
-                // {
-                //     if (_script is not null)
-                //     {
-                //         _script.Playing = chkPlay.Checked;
-                //         _script.StepTime = _stepTime;
-                //         _script.RealTime = (DateTime.Now - _startTime).TotalSeconds;
-                //         _script.Tempo = (int)sldTempo.Value;
-                //         _script.MasterVolume = sldVolume.Value;
-                //     }
-                // }
+                var res = script!.Setup();
 
-                var res = script.Setup(100, 200);
-
-                // Do stuff with script...
-
-                //script.CreatePlayer
+                for (int i = 0; i < 10; i++)
+                {
+                    script.Move();
+                }
             }
             catch (Exception ex)
             {
@@ -159,7 +113,7 @@ namespace Test
                 ok = false;
             }
 
-            //return ok;
+            UT_TRUE(ok);
         }
     }
 }
