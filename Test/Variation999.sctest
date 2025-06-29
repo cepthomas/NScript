@@ -27,7 +27,16 @@ public class Variation999 : ScriptBase
 
     public override int Move()
     {
-        // TODO1 something gamelike...
+        var role = RandomRole();
+        if (players.ContainsKey(role))
+        {
+            Print($"Role be gone:{role}");
+            players.Remove(role);
+        }
+        else
+        {
+            Print($"Role already gone:{role}");
+        }
 
         return 0;
     }
