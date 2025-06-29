@@ -25,10 +25,15 @@ NScript
 \---Test
         MyCompiler.cs
         Program.cs
-        ScriptBase.cs
+        ScriptBase.cs ==> must be named this! TODO1
         Test.csproj
         Test_COMP.cs
         Utils.sctest
-        Varation999.sctest
+        Variation999.sctest
         
+    // ScriptBase.cs - All the stuff to do app specific work
+    // Define script type api - as virtual members
+    // Store script data
+    // Do runtime work/processing.
+
 

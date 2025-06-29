@@ -78,13 +78,25 @@ namespace Ephemera.NScript
         public string ScriptPath { get; set; } = "";
 
         /// <summary>Default system dlls. Client can add or subtract.</summary>
-        public List<string> SystemDlls { get; } = ["System", "System.Private.CoreLib", "System.Runtime", "System.Collections", "System.Linq"];
+        public List<string> SystemDlls { get; } =
+        [
+            "System",
+            "System.Private.CoreLib",
+            "System.Runtime",
+            "System.IO",    
+            "System.Collections",
+            "System.Linq"
+        ];
 
-        /// <summary>App dlls.</summary>
+        /// <summary>Additional using statements not supplied by core dlls.</summary>
+        public List<string> Usings { get; set; } =
+        [
+            "System.Collections.Generic",
+            "System.Text"
+        ];
+
+        /// <summary>App dlls supplied by app compiler.</summary>
         public List<string> LocalDlls { get; set; } = [];
-
-        /// <summary>Additional using statements not supplied by dlls.</summary>
-        public List<string> Usings { get; set; } = ["System.Collections.Generic", "System.Text"];
 
         /// <summary>The compiled script.</summary>
         public object? Script { get; set; } = null;
@@ -169,7 +181,7 @@ namespace Ephemera.NScript
                 PreprocessFile(pcont);
 
                 ///// Compile the processed files.
-                Script = CompileNative(dir!);
+                Script = CompileFile(dir!);
 
                 Results.Add(new CompileResult()
                 {
@@ -190,10 +202,10 @@ namespace Ephemera.NScript
         }
 
         /// <summary>
-        /// Run the compiler on a text block.
+        /// Run the compiler on a simple text block.
         /// </summary>
         /// <param name="text">Text to compile.</param>
-        public void CompileText(string text) // TODO1 combine with CompileScript()??
+        public void CompileText(string text)
         {
             DateTime startTime = DateTime.Now; // for metrics
 
@@ -265,7 +277,7 @@ namespace Ephemera.NScript
         /// </summary>
         /// <param name="baseDir">Fully qualified path to main file.</param>
         /// <returns>Compiled script</returns>
-        object? CompileNative(string baseDir)
+        object? CompileFile(string baseDir)
         {
             object? script = null;
 
@@ -424,7 +436,7 @@ namespace Ephemera.NScript
         }
 
         /// <summary>
-        /// Parse one file. Recursive to support nested include(fn).
+        /// Parse one file. Recursive to support nested Include(fn).
         /// </summary>
         /// <param name="pcont">The parse context.</param>
         /// <returns>True if a valid file.</returns>
@@ -529,7 +541,7 @@ namespace Ephemera.NScript
             // Create the common contents.
             List<string> codeLines =
             [
-                $"// Created from:{origin}",
+                $"// Created from {origin} {DateTime.Now}",
             ];
 
             SystemDlls.ForEach(d => codeLines.Add($"using {d};"));

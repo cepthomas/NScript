@@ -8,7 +8,7 @@ using Ephemera.NBagOfTricks.PNUT;
 
 // namespace Ephemera.ScriptCompiler.Test
 
-namespace Test
+namespace Ephemera.NScript.Test
 {
     internal class Program
     {

@@ -9,9 +9,9 @@ using System.IO;
 using Ephemera.NBagOfTricks;
 using Ephemera.NBagOfTricks.PNUT;
 using Ephemera.NScript;
+//using Test;
 
-
-namespace Test
+namespace Ephemera.NScript.Test
 {
     public class COMP_CORE : TestSuite
     {
@@ -78,21 +78,23 @@ namespace Test
         public override void RunSuite()
         {
             UT_INFO("Tests script compiler using example file.");
-            UT_INFO("This essentially defines ohow a host application loads and runs scripts.");
+            UT_INFO("This demonstrates how a host application loads and runs scripts.");
+            UT_STOP_ON_FAIL(true);
 
             var ok = true;
 
             // Compile script.
             MyCompiler compiler = new();
+            compiler.CompileScript(Path.Combine("Variation999.sctest"));
+            compiler.Results.ForEach(res => UT_INFO($"{res}"));
 
-            compiler.CompileScript(Path.Combine(MiscUtils.GetSourcePath(), "Varation999.sctest"));
+            UT_NOT_NULL(compiler.Script);
 
-            if (compiler.Script is null)
-            {
-                // It failed.
-                compiler.Results.ForEach(res => UT_INFO($"{res}"));
-                return;
-            }
+            //if (compiler.Script is null)
+            //{
+            //    // It failed.
+            //    return;
+            //}
 
             var script = compiler.Script as ScriptBase;
 

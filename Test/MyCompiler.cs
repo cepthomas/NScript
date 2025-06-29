@@ -8,10 +8,9 @@ using System.Threading.Tasks;
 using System.IO;
 using System.Drawing;
 using Ephemera.NBagOfTricks;
-using Ephemera.NScript;
 
 
-namespace Test
+namespace Ephemera.NScript.Test
 {
     /// <summary>Test compiler.</summary>
     public class MyCompiler : CompilerCore
@@ -23,8 +22,12 @@ namespace Test
         /// <summary>Called before compiler starts.</summary>
         public override void PreCompile()
         {
-            LocalDlls = ["Ephemera.NBagOfTricks", "Ephemera.NScript"];
-            Usings.Add("System.Drawing");
+            LocalDlls = ["Ephemera.NBagOfTricks", "Ephemera.NScript", "Ephemera.NScript.Test"];
+            //SystemDlls.Add("System");
+            //SystemDlls.Add("System.Drawing");
+            //Usings.Add("System.Drawing");
+
+            //Console.WriteLine(">>>>>>>>>>>>>>>>");
         }
 
         /// <summary>Called after compiler finished.</summary>
@@ -44,15 +47,40 @@ namespace Test
         {
             bool handled = false;
 
-            var parts = sline.SplitByToken("=>");
-            if (parts.Count == 2 && parts[0] == "kustom")
+            // Check for specials.
+            string strim = sline.Trim();
+
+            if (strim.StartsWith("Kustom"))
             {
-                _gotBurger = true;
+                bool valid = false;
                 handled = true;
+
+                List<string> parts = strim.SplitByTokens("()");
+                if (parts.Count == 2)
+                {
+                    string val = parts[1].Replace("\"", "");
+                    if (val == "cheeseburger")
+                    {
+                        _gotBurger = true;
+                        handled = true;
+                        valid = true;
+                    }
+                }
+
+                if (!valid)
+                {
+                    Results.Add(new CompileResult()
+                    {
+                        ResultType = CompileResultType.Error,
+                        Message = $"Invalid Kustom: {strim}",
+                        SourceFile = pcont.SourceFile,
+                        LineNumber = pcont.LineNumber
+                    });
+                }
             }
 
             return handled;
+            #endregion
         }
-        #endregion
     }
 }
