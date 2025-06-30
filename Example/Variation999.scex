@@ -1,6 +1,6 @@
 
 // Directives/preprocess: Include config and lib files.
-Include("Utils.sctest");
+Include("Utils.scex");
 
 Kustom("cheeseburger")
 

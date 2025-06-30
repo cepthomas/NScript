@@ -25,9 +25,16 @@
     </PropertyGroup>
 
     <ItemGroup>
+      <Compile Remove="Script\**" />
       <Compile Remove="temp\**" />
+      <EmbeddedResource Remove="Script\**" />
       <EmbeddedResource Remove="temp\**" />
+      <None Remove="Script\**" />
       <None Remove="temp\**" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <Compile Remove="MyScriptApi.cs" />
     </ItemGroup>
 
     <ItemGroup>

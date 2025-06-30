@@ -8,7 +8,7 @@ using Ephemera.NBagOfTricks.PNUT;
 
 namespace Ephemera.NScript.Example
 {
-    internal class Program
+    internal class Example
     {
         static void Main(string[] _)
         {
@@ -16,28 +16,20 @@ namespace Ephemera.NScript.Example
             //DoScriptText();
         }
 
-//Run script compiler using example file.
-//This demonstrates how a host application loads and runs scripts.
-//Got a burger!!!
-//Info[Compiling Variation999.sctest.]
-//Error Variation999.sctest(30) [Argument 1: cannot convert from 'Ephemera.NScript.Example.Role' to 'string']
-//Error Variation999.sctest(33) [Argument 1: cannot convert from 'Ephemera.NScript.Example.Role' to 'string']
-//Info[Compile script took 417 msec.]
-
-        static void DoScriptFile()
+        static int DoScriptFile()
         {
             Console.WriteLine("Run script compiler using example file.");
             Console.WriteLine("This demonstrates how a host application loads and runs scripts.");
 
             // Compile script.
             MyCompiler compiler = new();
-            compiler.CompileScript(Path.Combine("Variation999.sctest"));
-            compiler.Results.ForEach(res => Console.WriteLine($"{res}"));
+            compiler.CompileScript("Variation999.sctest");
 
             if (compiler.Script is null)
             {
                 // It failed.
-                return;
+                compiler.Results.ForEach(res => Console.WriteLine($"{res}"));
+                return 1;
             }
 
             var script = compiler.Script as MyScriptApi;
@@ -58,10 +50,11 @@ namespace Ephemera.NScript.Example
                 Console.WriteLine($"Script Error: {ex.Message}");
                 //throw;
             }
+            return 0;
         }
 
 
-        static void DoScriptText()
+        static int DoScriptText()
         {
             string code = @"
 
@@ -105,7 +98,7 @@ namespace Ephemera.NScript.Example
 
             compiler.CompileText(code);
 
-            //compiler.Results;
+            return 0;
         }
     }
 }

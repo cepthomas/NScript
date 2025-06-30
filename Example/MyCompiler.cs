@@ -26,8 +26,6 @@ namespace Ephemera.NScript.Example
             //SystemDlls.Add("System");
             //SystemDlls.Add("System.Drawing");
             //Usings.Add("System.Drawing");
-
-            //Console.WriteLine(">>>>>>>>>>>>>>>>");
         }
 
         /// <summary>Called after compiler finished.</summary>
@@ -47,7 +45,7 @@ namespace Ephemera.NScript.Example
         {
             bool handled = false;
 
-            // Check for specials.
+            // Check for my specials.
             string strim = sline.Trim();
 
             if (strim.StartsWith("Kustom"))
@@ -62,7 +60,6 @@ namespace Ephemera.NScript.Example
                     if (val == "cheeseburger")
                     {
                         _gotBurger = true;
-                        handled = true;
                         valid = true;
                     }
                 }
