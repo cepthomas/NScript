@@ -1,19 +1,19 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
     <PropertyGroup>
-
-        <OutputType>Library</OutputType>
-        <UseWindowsForms>true</UseWindowsForms>
-        <OutputPath>bin\</OutputPath>
+      
+        <OutputType>Exe</OutputType>
         <TargetFramework>net8.0-windows</TargetFramework>
+        <OutputPath>bin\</OutputPath>
         <RuntimeIdentifier>win-x64</RuntimeIdentifier>
 
+        <ImplicitUsings>disable</ImplicitUsings>
         <Version>2.0.0</Version>
         <!-- <AllowUnsafeBlocks>true</AllowUnsafeBlocks> -->
         <Description>C# script compiler</Description>
         <Copyright>MIT License</Copyright>
-        <RootNamespace>Ephemera.NScript</RootNamespace>
-        <AssemblyName>Ephemera.NScript</AssemblyName>
+        <RootNamespace>Ephemera.NScript.Example</RootNamespace>
+        <AssemblyName>Ephemera.NScript.Example</AssemblyName>
         <!-- <DefineConstants>DEBUG;TRACE</DefineConstants> -->
         <NoWarn>CS1591</NoWarn>
         <Nullable>enable</Nullable>
@@ -25,24 +25,28 @@
     </PropertyGroup>
 
     <ItemGroup>
-      <Compile Remove="Example\**" />
-      <Compile Remove="Test\**" />
-      <EmbeddedResource Remove="Example\**" />
-      <EmbeddedResource Remove="Test\**" />
-      <None Remove="Example\**" />
-      <None Remove="Test\**" />
+      <Compile Remove="temp\**" />
+      <EmbeddedResource Remove="temp\**" />
+      <None Remove="temp\**" />
     </ItemGroup>
 
     <ItemGroup>
-        <PackageReference Include="Microsoft.CodeAnalysis.Common" Version="4.2.0" />
-        <PackageReference Include="Microsoft.CodeAnalysis.CSharp" Version="4.2.0" />
-        <PackageReference Include="System.Drawing.Common" Version="6.0.0" />
+        <ProjectReference Include="..\NScript.csproj" />
     </ItemGroup>
 
     <ItemGroup>
       <Reference Include="Ephemera.NBagOfTricks">
-        <HintPath>lib\Ephemera.NBagOfTricks.dll</HintPath>
+        <HintPath>..\lib\Ephemera.NBagOfTricks.dll</HintPath>
       </Reference>
+    </ItemGroup>
+
+    <ItemGroup>
+      <None Update="Utils.sctest">
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      </None>
+      <None Update="Variation999.sctest">
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      </None>
     </ItemGroup>
 
 </Project>
