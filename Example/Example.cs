@@ -2,44 +2,52 @@
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
-//using System.Windows.Forms;
-using Ephemera.NBagOfTricks.PNUT;
+using Ephemera.NBagOfTricks;
+//using Ephemera.NScript.Example.Script;
 
 
 namespace Ephemera.NScript.Example
 {
     internal class Example
     {
+        /// <summary>
+        /// Start here.
+        /// </summary>
+        /// <param name="_">Args</param>
         static void Main(string[] _)
         {
             DoScriptFile();
             //DoScriptText();
         }
 
+        /// <summary>
+        /// Run script compiler using example file.
+        /// This demonstrates how the host application loads and runs scripts.
+        /// </summary>
+        /// <returns></returns>
         static int DoScriptFile()
         {
-            Console.WriteLine("Run script compiler using example file.");
-            Console.WriteLine("This demonstrates how a host application loads and runs scripts.");
-
             // Compile script.
-            MyCompiler compiler = new();
-            compiler.CompileScript("Variation999.sctest");
+            MyCompiler compiler = new() { ScriptPath = MiscUtils.GetSourcePath() };
+            var scriptFile = Path.Combine(compiler.ScriptPath, "Variation999.scex");
+            compiler.CompileScript(scriptFile);
 
             if (compiler.Script is null)
             {
                 // It failed.
-                compiler.Results.ForEach(res => Console.WriteLine($"{res}"));
+                Console.WriteLine($"Compile Failed:");
+                compiler.Results.ForEach(res => Console.WriteLine($"    {res}"));
                 return 1;
             }
 
-            var script = compiler.Script as MyScriptApi;
-
-            // Run the game loop.
-            // Need exception handling here to protect from user script errors.
+            // Need exception handling to protect from user runtime script errors.
             try
             {
+                // Init script.
+                var script = compiler.Script as MyScriptApi;
                 var res = script!.Setup();
 
+                // Run the game loop.
                 for (int i = 0; i < 10; i++)
                 {
                     script.Move();
@@ -47,14 +55,17 @@ namespace Ephemera.NScript.Example
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Script Error: {ex.Message}");
-                //throw;
+                Console.WriteLine($"Compile Exception: {ex.Message}");
+                Console.WriteLine($"{ex.StackTrace}");
             }
             return 0;
         }
 
-
-        static int DoScriptText()
+        /// <summary>
+        /// Run script compiler on a simple text block of code.
+        /// </summary>
+        /// <returns></returns>
+        static int DoScriptText() // TODO1 remove/relocate this?
         {
             string code = @"
 
@@ -91,12 +102,16 @@ namespace Ephemera.NScript.Example
                 public record Person(string FirstName, string LastName);
             }";
 
-            Console.WriteLine("Run script compiler on a simple text block of code.");
-
             // Compile script.
             CompilerCore compiler = new();
-
             compiler.CompileText(code);
+
+            if (compiler.Script is null)
+            {
+                // It failed.
+                compiler.Results.ForEach(res => Console.WriteLine($"{res}"));
+                return 1;
+            }
 
             return 0;
         }

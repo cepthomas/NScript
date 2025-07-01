@@ -2,7 +2,7 @@
 // Directives/preprocess: Include config and lib files.
 Include("Utils.scex");
 
-Kustom("cheeseburger")
+KustomDirective("cheeseburger")
 
 public class Variation999 : MyScriptApi
 {

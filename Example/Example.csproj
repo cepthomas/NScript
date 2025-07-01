@@ -33,9 +33,9 @@
       <None Remove="temp\**" />
     </ItemGroup>
 
-    <ItemGroup>
-      <Compile Remove="MyScriptApi.cs" />
-    </ItemGroup>
+    <!-- <ItemGroup>
+      <Compile Include="MyScriptApi.cs" />
+    </ItemGroup> -->
 
     <ItemGroup>
         <ProjectReference Include="..\NScript.csproj" />
@@ -47,7 +47,7 @@
       </Reference>
     </ItemGroup>
 
-    <ItemGroup>
+<!--     <ItemGroup>
       <None Update="Utils.sctest">
         <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       </None>
@@ -55,5 +55,6 @@
         <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       </None>
     </ItemGroup>
+-->
 
 </Project>

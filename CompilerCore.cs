@@ -43,8 +43,8 @@ namespace Ephemera.NScript
         /// <summary>For humans.</summary>
         public override string ToString()
         {
-            StringBuilder sb = new($"{ResultType} ");
-            if (SourceFile is not null && LineNumber is not null)
+            StringBuilder sb = new($"Compile {ResultType}: ");
+            if (SourceFile is not null)
             {
                 sb.Append($"{SourceFile}({LineNumber}) ");
             }
@@ -568,7 +568,7 @@ var genLineNum = diag.Location.GetLineSpan().StartLinePosition.Line; // 0-based
             }
             else
             {
-                codeLines.Add("//>>>>>>");
+                codeLines.Add("// ===========> _addWrapper = false");
             }
 
             return codeLines;

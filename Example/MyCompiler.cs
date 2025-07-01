@@ -22,7 +22,7 @@ namespace Ephemera.NScript.Example
         /// <summary>Called before compiler starts.</summary>
         public override void PreCompile()
         {
-            LocalDlls = ["Ephemera.NBagOfTricks", "Ephemera.NScript", "Ephemera.NScript.Example"];
+            LocalDlls = ["Ephemera.NBagOfTricks", "Ephemera.NScript"];//, "Ephemera.NScript.Example"];
             //SystemDlls.Add("System");
             //SystemDlls.Add("System.Drawing");
             //Usings.Add("System.Drawing");
@@ -33,7 +33,11 @@ namespace Ephemera.NScript.Example
         {
             if (_gotBurger)
             {
-                Console.WriteLine("Got a burger!!!");
+                Results.Add(new CompileResult()
+                {
+                    ResultType = CompileResultType.Info,
+                    Message = "Script has a cheeseburger!"
+                });
             }
         }
 
@@ -48,7 +52,7 @@ namespace Ephemera.NScript.Example
             // Check for my specials.
             string strim = sline.Trim();
 
-            if (strim.StartsWith("Kustom"))
+            if (strim.StartsWith("KustomDirective"))
             {
                 bool valid = false;
                 handled = true;

@@ -5,53 +5,64 @@ using System.Linq;
 using System.Text;
 
 
-namespace Ephemera.NScript.Example.Script
+namespace Ephemera.NScript.Example//.Script
 {
+    /// <summary>Player roles.</summary>
     public enum Role { Oligarch, Sycophant, Rebel, Peon }
 
     public class MyScriptApi
     {
         #region Fields accessible by game implementations
-        protected int worldX;
-
-        protected int worldY;
-
+        /// <summary>All the players. Key is name.</summary>
         protected Dictionary<string, Role> players = [];
 
+        /// <summary>Board size.</summary>
+        protected int worldX;
+
+        /// <summary>Board size.</summary>
+        protected int worldY;
+
+        /// <summary>The dice.</summary>
         readonly Random rand = new();
         #endregion
 
-        #region Application => Game
-
+        #region Host application calls game functions
+        /// <summary>Initialization.</summary>
         public virtual int Setup()
         {
             throw new NotImplementedException();
         }
 
+        /// <summary>Do something.</summary>
         public virtual int Move()
         {
             throw new NotImplementedException();
         }
-
         #endregion
 
-        #region Game => Application
+        #region Common game functions
+        /// <summary>Make me a player.</summary>
         protected void CreatePlayer(Role role, string name)
         {
+            this.GetHashCode();
+            Print($"CreatePlayer({role}, {name}) {players.Count}");
             players.Add(name, role);
         }
 
-        protected void Print(string msg)
-        {
-            Console.WriteLine($"Script Print(): {msg}");
-        }
-
+        /// <summary>Roll the dice.</summary>
         protected string RandomPlayer()
         {
             Print($"RandomPlayer: {players.Count}");
             int i = rand.Next(0, players.Count);
             var player = players.ToList()[i];
+            Print($"RandomPlayer: {player.Key}");
             return player.Key;
+        }
+
+        /// <summary>Tell the user something.</summary>
+        protected void Print(string msg)
+        {
+            Console.WriteLine($"Script: {msg} {GetHashCode()}");
         }
         #endregion
     }
