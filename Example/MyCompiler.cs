@@ -68,8 +68,8 @@ namespace Ephemera.NScript.Example
                 {
                     Results.Add(new CompileResult(CompileResultType.Error, $"Invalid KustomDirective: {strim}")
                     {
-                        SourceFile = pcont.SourceFileName,
-                        LineNumber = pcont.SourceLineNumber
+                        SourceFileName = pcont.SourceFileName,
+                        SourceLineNumber = pcont.SourceLineNumber
                     });
                 }
             }

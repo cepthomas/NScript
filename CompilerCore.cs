@@ -34,10 +34,10 @@ namespace Ephemera.NScript
         public CompileResultType ResultType { get; set; } = resultType;
 
         /// <summary>Original source file.</summary>
-        public string? SourceFile { get; set; }
+        public string? SourceFileName { get; set; }
 
         /// <summary>Original source line number 1-based. -1 means inapplicable or unknown.</summary>
-        public int LineNumber { get; set; } = -1;
+        public int SourceLineNumber { get; set; } = -1;
 
         /// <summary>Content.</summary>
         public string Message { get; set; } = msg;
@@ -46,38 +46,49 @@ namespace Ephemera.NScript
         public override string ToString()
         {
             StringBuilder sb = new($"{ResultType}: ");
-            if (SourceFile is not null)
+            if (SourceFileName is not null)
             {
-                sb.Append($"{SourceFile}({LineNumber}) ");
+                sb.Append($"{SourceFileName}({SourceLineNumber}) ");
             }
             sb.Append($"[{Message}]");
             return sb.ToString();
         }
     }
 
-    /// <summary>Parser context class - one per original source file.</summary>
-    /// <remarks>Convenience constructor.</remarks>
-    public class FileContext(string fn)
+    /// <summary>Parser file context class - one per original source file.</summary>
+//    public class FileContext(string fn)
+    public class ScriptFile(string fn)
     {
-        /// <summary>Current source file.</summary>
+        /// <summary>Original source file.</summary>
+        /*public*/
         public string SourceFileName { get; init; } = fn;
 
-        /// <summary>Current source line 0-based.</summary>
-        public int SourceLineNumber { get; set; } = 0;
+        ///// <summary>Current source line 0-based.</summary>
+        //public int SourceLineNumber { get; set; } = 0;
+
+        /// <summary>If not the same as SourceFileName this is a generated file.</summary>
+        public string GeneratedFileNameX { get; private set; }
 
         /// <summary>If not null this is a generated file.</summary>
-        public string? GeneratedFileNameX { get; set; }
+        //public string? GeneratedFileNameX { get; set; }
         //public string GeneratedFileName { get { return _genFileName ?? SourceFileName; } set { _genFileName = value; } }
         //string? _genFileName = null;
 
         /// <summary>Is CompileFileName generated or original?</summary>
-//        public bool IsGenerated { get; set; }
+//        public bool IsGenerated { get { return SourceFileName != CompiledFileName; } }
 
         /// <summary>The translated script code lines to feed the compiler.</summary>
         public List<string> GeneratedCode { get; set; } = [];
 
-        /// <summary>Index -> GeneratedCode[], value -> SourceLineNumber.</summary>
-        public List<int> LineNumberMap { get; set; } = [];
+        /// <summary>key is GeneratedCode line number aka index, value is Source line number.</summary>
+        public Dictionary<int, int> LineNumberMap { get; set; } = [];
+
+        public (string sourceFileName, int sourceLineNum) GetSourceInfo(int lineNum)
+        {
+            //int ln = GeneratedFileNameX is null ? lineNum : LineNumberMap.TryGetValue(lineNum, out int value) ? value : -1;
+            int ln = LineNumberMap.TryGetValue(lineNum, out int value) ? value : -1;
+            return (SourceFileName, ln);
+        }
     }
     #endregion
 
@@ -118,8 +129,8 @@ namespace Ephemera.NScript
         /// <summary>Accumulated errors and other results.</summary>
         public List<CompileResult> Results { get; } = [];
 
-        /// <summary>All active source files. Provided so client can monitor for external changes. TODO1 used?</summary>
-        public IEnumerable<string> SourceFiles { get { return [.. _filesToCompile.Select(f => f.SourceFileName)]; } }
+        /// <summary>All active script source files. Provided so client can monitor for external changes. TODO1 used?</summary>
+        public IEnumerable<string> SourceFiles { get { return [.. _generatedFiles.Select(f => f.SourceFileName)]; } }
 //        public IEnumerable<string> SourceFiles { get { return [.. _filesToCompile.Values.Select(f => f.OriginalSourceFileNameX)]; } }
 
         /// <summary>Compile products are here.</summary>
@@ -130,7 +141,7 @@ namespace Ephemera.NScript
         /// <summary>Script info.</summary>
         string _scriptName = "???";
 
-        /// <summary>Scrript api.</summary>
+        /// <summary>Script api.</summary>
         string _apiName = "???";
 
         ///// <summary>Accumulated lines to go in the constructor.</summary>
@@ -139,7 +150,9 @@ namespace Ephemera.NScript
         ///// <summary>Products of file preprocess. Key is generated file name.</summary>
         //       readonly Dictionary<string, FileContext> _filesToCompile = [];
         /// <summary>Products of file preprocess.</summary>
-        readonly List<FileContext> _filesToCompile = [];
+        readonly List<ScriptFile> _scriptFiles = [];
+
+        readonly List<string> _plainFiles = [];
 
         /// <summary>Add the class wrapper if not in script.</summary>
         readonly bool _addWrapper = false; // TODO1? never used - maybe always add
@@ -156,7 +169,7 @@ namespace Ephemera.NScript
         /// <param name="sline">Trimmed line</param>
         /// <param name="pcont">File context</param>
         /// <returns>True if handled</returns>
-        public virtual bool PreprocessLine(string sline, FileContext pcont) { return false; }
+        public virtual bool PreprocessLine(string sline, ScriptFile pcont) { return false; }
         #endregion
 
         #region Public functions
@@ -170,12 +183,16 @@ namespace Ephemera.NScript
             // Reset everything.
             CompiledScript = null;
             Results.Clear();
-            _filesToCompile.Clear();
+            _scriptFiles.Clear();
+            _plainFiles.Clear();
             //_initLines.Clear();
 
             try
             {
                 DateTime startTime = DateTime.Now;
+
+                // Add the api file.
+                _plainFiles.Add(apifn);
                 _apiName = Path.GetFileNameWithoutExtension(apifn);
 
                 PreCompile();
@@ -194,14 +211,12 @@ namespace Ephemera.NScript
                 var dir = Path.GetDirectoryName(scriptfn);
 
                 // Process the source files into something that can be compiled.
-                FileContext pcont = new(scriptfn);
+                ScriptFile pcont = new(scriptfn);
                 PreprocessFile(pcont); // recursive function
 
-                // Add the api file.
-                _filesToCompile.Add(new(apifn));
 
                 // Compile the processed files.
-                CompiledScript = CompileDir(dir!);
+                CompiledScript = CompileOne(dir!);
 
                 Results.Add(new CompileResult(CompileResultType.Info, $"Compile script: {(DateTime.Now - startTime).Milliseconds} msec."));
 
@@ -323,7 +338,7 @@ namespace Ephemera.NScript
                 //var resType = Translate(diag.Severity, false);
                 Results.Add(new(Translate(diag.Severity, false), diag.GetMessage())
                 {
-                    LineNumber = diag.Location.GetLineSpan().StartLinePosition.Line + 1
+                    SourceLineNumber = diag.Location.GetLineSpan().StartLinePosition.Line + 1
                 });
             }
         }
@@ -335,7 +350,7 @@ namespace Ephemera.NScript
         /// </summary>
         /// <param name="baseDir">Fully qualified path to main file.</param>
         /// <returns>Compiled script</returns>
-        object? CompileDir(string baseDir)
+        object? CompileOne(string baseDir)
         {
             object? script = null;
 
@@ -351,37 +366,21 @@ namespace Ephemera.NScript
                 List<SyntaxTree> trees = [];
 
                 // Write the generated source files to temp build area.
-                foreach (var tocomp in _filesToCompile)//.Keys)
+                foreach (var tocomp in _scriptFiles)//.Keys)
                 {
-
-
-
-                    if (tocomp.GeneratedFileNameX is not null)
+                    if (tocomp.GeneratedCode.Count > 0)
                     {
-                        if (tocomp.GeneratedCode.Count > 0)
-                        {
-                            //FileContext ci = _filesToCompile[genFn];
-                            string fullpath = Path.Combine(TempDir, tocomp.GeneratedFileNameX);
-                            //File.Delete(fullpath);
-                            File.WriteAllLines(fullpath, tocomp.GeneratedCode);
+                        //FileContext ci = _filesToCompile[genFn];
+                        string fullpath = Path.Combine(TempDir, tocomp.GeneratedFileNameX);
+                        //File.Delete(fullpath);
+                        File.WriteAllLines(fullpath, tocomp.GeneratedCode);
 
-                            // Build a syntax tree.
-                            string code = File.ReadAllText(fullpath);
-                            CSharpParseOptions popts = new();
-                            SyntaxTree tree = CSharpSyntaxTree.ParseText(code, popts, tocomp.GeneratedFileNameX);
-                            trees.Add(tree);
-                        }
-                    }
-                    else // plain file
-                    {
                         // Build a syntax tree.
-                        string code = File.ReadAllText(tocomp.SourceFileName);
+                        string code = File.ReadAllText(fullpath);
                         CSharpParseOptions popts = new();
-                        SyntaxTree tree = CSharpSyntaxTree.ParseText(code, popts, tocomp.SourceFileName);
+                        SyntaxTree tree = CSharpSyntaxTree.ParseText(code, popts, tocomp.GeneratedFileNameX);
                         trees.Add(tree);
                     }
-
-
                     /*
                             public static SyntaxTree ParseText(
             string text,
@@ -395,6 +394,15 @@ namespace Ephemera.NScript
 
                     */
 
+                }
+
+                foreach (var fn in _plainFiles)
+                {
+                    // Build a syntax tree.
+                    string code = File.ReadAllText(fn);
+                    CSharpParseOptions popts = new();
+                    SyntaxTree tree = CSharpSyntaxTree.ParseText(code, popts, fn);
+                    trees.Add(tree);
                 }
 
                 // We now build up a list of references needed to compile the code.
@@ -446,68 +454,24 @@ namespace Ephemera.NScript
                 {
                     CompileResult se = new(Translate(diag.Severity, IgnoreWarnings), diag.GetMessage());
 
-                    //switch (diag.Severity)
-                    //{
-                    //    case DiagnosticSeverity.Error:
-                    //        se.ResultType = CompileResultType.Error;
-                    //        break;
-
-                    //    case DiagnosticSeverity.Warning:
-                    //        if (IgnoreWarnings)
-                    //        {
-                    //            keep = false;
-                    //        }
-                    //        else
-                    //        {
-                    //            se.ResultType = CompileResultType.Warning;
-                    //        }
-                    //        break;
-
-                    //    case DiagnosticSeverity.Info:
-                    //        se.ResultType = CompileResultType.Info;
-                    //        break;
-
-                    //    case DiagnosticSeverity.Hidden:
-                    //        if (IgnoreWarnings)
-                    //        {
-                    //            keep = false;
-                    //        }
-                    //        else
-                    //        {
-                    //            //?? se.ResultType = CompileResultType.Warning;
-                    //        }
-                    //        break;
-                    //}
-
-
-
-                    //CompileResult se = new()
-                    //{
-                    //    Message = diag.GetMessage()
-                    //};
-                    //bool keep = true;
-
-
-var compFileName = diag.Location.SourceTree!.FilePath;
+var fileName = diag.Location.SourceTree!.FilePath;
 var lineNum = diag.Location.GetLineSpan().StartLinePosition.Line; // 0-based
 
 
+                    // Get the original context.
+                    //var info = pc
 
-
-
-                    // Get the original source info.
-
-                    var context = _filesToCompile.Where(f => f.GeneratedFileNameX == compFileName);
+                    var context = _scriptFiles.Where(f => f.GeneratedFileNameX == fileName);
 
                     if (context.Any())
                     {
-                        se.SourceFile = context.First().SourceFileName;
+                        se.SourceFileName = context.First().SourceFileName;
                         // Dig out the original line number.
                         string origLine = context.First().GeneratedCode[lineNum];
                         int ind = origLine.LastIndexOf("//");
                         if (ind != -1)
                         {
-                            se.LineNumber = int.TryParse(origLine[(ind + 2)..], out int origLineNum) ? origLineNum : -1; // 1-based
+                            se.SourceLineNumber = int.TryParse(origLine[(ind + 2)..], out int origLineNum) ? origLineNum : -1; // 1-based
                         }
                     }
                     //else presumably internal generated file - should never have errors.
@@ -552,13 +516,13 @@ var lineNum = diag.Location.GetLineSpan().StartLinePosition.Line; // 0-based
         /// </summary>
         /// <param name="pcont">The parse context.</param>
         /// <returns>True if a valid file.</returns>
-        bool PreprocessFile(FileContext pcont)
+        bool PreprocessFile(ScriptFile pcont)
         {
             bool valid = File.Exists(pcont.SourceFileName);
 
             if (valid)
             {
-                pcont.GeneratedFileName = $"{_scriptName}_src{_filesToCompile.Count}.cs".ToLower();
+                pcont.GeneratedFileNameX = $"{_scriptName}_src{_scriptFiles.Count}.cs".ToLower();
                 _filesToCompile.Add(pcont);
 
                 // Preamble.
@@ -567,9 +531,9 @@ var lineNum = diag.Location.GetLineSpan().StartLinePosition.Line; // 0-based
                 // The content.
                 List<string> sourceLines = [.. File.ReadAllLines(pcont.SourceFileName)];
 
-                for (pcont.SourceLineNumber = 0; pcont.SourceLineNumber < sourceLines.Count; pcont.SourceLineNumber++)
+                for (int sourceLineNumber = 0; sourceLineNumber < sourceLines.Count; sourceLineNumber++)
                 {
-                    string s = sourceLines[pcont.SourceLineNumber];
+                    string s = sourceLines[sourceLineNumber];
 
                     // Remove any comments. Single line type only.
                     int pos = s.IndexOf("//");
@@ -597,7 +561,7 @@ var lineNum = diag.Location.GetLineSpan().StartLinePosition.Line; // 0-based
                             }
 
                             // Recursive call to parse this file
-                            FileContext subcont = new(fn);
+                            ScriptFile subcont = new(fn);
                             valid = PreprocessFile(subcont);
                         }
                         else
@@ -609,8 +573,8 @@ var lineNum = diag.Location.GetLineSpan().StartLinePosition.Line; // 0-based
                         {
                             Results.Add(new CompileResult(CompileResultType.Error, $"Invalid Include: {strim}")
                             {
-                                SourceFile = pcont.SourceFileName,
-                                LineNumber = pcont.SourceLineNumber + 1
+                                SourceFileName = pcont.SourceFileName,
+                                SourceLineNumber = sourceLineNumber + 1
                             });
                         }
                     }
@@ -623,7 +587,11 @@ var lineNum = diag.Location.GetLineSpan().StartLinePosition.Line; // 0-based
                         if (cline.Trim() != "")
                         {
                             // Store the whole line with line number tacked on and some indentation. TODO1 or keep map(s) of source to genned line numbers?
-                            pcont.GeneratedCode.Add(_addWrapper ? $"        {cline} //{pcont.SourceLineNumber}" : $"    {cline} //{pcont.SourceLineNumber}");
+                            //pcont.GeneratedCode.Add(_addWrapper ? $"        {cline} //{SourceLineNumber}" : $"    {cline} //{SourceLineNumber}");
+
+                            // Store the whole line.
+                            pcont.LineNumberMap[pcont.GeneratedCode.Count] = sourceLineNumber;
+                            pcont.GeneratedCode.Add(_addWrapper ? $"        {cline}" : $"    {cline}");
                         }
                     }
                 }
@@ -669,10 +637,10 @@ var lineNum = diag.Location.GetLineSpan().StartLinePosition.Line; // 0-based
                     "    {"
                 ]);
             }
-            else
-            {
-                codeLines.Add("// ===========> _addWrapper = false");
-            }
+            //else
+            //{
+            //    codeLines.Add("// ===========> _addWrapper = false");
+            //}
 
             return codeLines;
         }
