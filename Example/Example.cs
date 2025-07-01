@@ -30,13 +30,14 @@ namespace Ephemera.NScript.Example
             // Compile script.
             MyCompiler compiler = new() { ScriptPath = MiscUtils.GetSourcePath() };
             var scriptFile = Path.Combine(compiler.ScriptPath, "Variation999.scex");
-            compiler.CompileScript(scriptFile);
+            var apiFile = Path.Combine(compiler.ScriptPath, "MyScriptApi.cs");
+            compiler.CompileScript(scriptFile, apiFile);
 
-            if (compiler.Script is null)
+            if (compiler.CompiledScript is null)
             {
                 // It failed.
                 Console.WriteLine($"Compile Failed:");
-                compiler.Results.ForEach(res => Console.WriteLine($"    {res}"));
+                compiler.Results.ForEach(res => Console.WriteLine($"{res}"));
                 return 1;
             }
 
@@ -44,7 +45,7 @@ namespace Ephemera.NScript.Example
             try
             {
                 // Init script.
-                var script = compiler.Script as MyScriptApi;
+                var script = compiler.CompiledScript as MyScriptApi;
                 var res = script!.Setup();
 
                 // Run the game loop.
@@ -106,7 +107,7 @@ namespace Ephemera.NScript.Example
             CompilerCore compiler = new();
             compiler.CompileText(code);
 
-            if (compiler.Script is null)
+            if (compiler.CompiledScript is null)
             {
                 // It failed.
                 compiler.Results.ForEach(res => Console.WriteLine($"{res}"));

@@ -33,11 +33,7 @@ namespace Ephemera.NScript.Example
         {
             if (_gotBurger)
             {
-                Results.Add(new CompileResult()
-                {
-                    ResultType = CompileResultType.Info,
-                    Message = "Script has a cheeseburger!"
-                });
+                Results.Add(new CompileResult(CompileResultType.Info, "Script has a cheeseburger!"));
             }
         }
 
@@ -70,12 +66,10 @@ namespace Ephemera.NScript.Example
 
                 if (!valid)
                 {
-                    Results.Add(new CompileResult()
+                    Results.Add(new CompileResult(CompileResultType.Error, $"Invalid KustomDirective: {strim}")
                     {
-                        ResultType = CompileResultType.Error,
-                        Message = $"Invalid Kustom: {strim}",
-                        SourceFile = pcont.SourceFileX,
-                        LineNumber = pcont.SourceLineNumberX
+                        SourceFile = pcont.SourceFileName,
+                        LineNumber = pcont.SourceLineNumber
                     });
                 }
             }
