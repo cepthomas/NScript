@@ -1,16 +1,15 @@
-//using Ephemera.NBagOfTricks;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 
 
-namespace Ephemera.NScript.Example//.Script
+namespace Ephemera.NScript.Example
 {
     /// <summary>Player roles.</summary>
     public enum Role { Oligarch, Sycophant, Rebel, Peon }
 
-    public class MyScriptApi
+    public class GameScriptApi
     {
         #region Fields accessible by game implementations
         /// <summary>All the players. Key is name.</summary>
@@ -44,7 +43,6 @@ namespace Ephemera.NScript.Example//.Script
         /// <summary>Make me a player.</summary>
         protected void CreatePlayer(Role role, string name)
         {
-            this.GetHashCode();
             Print($"CreatePlayer({role}, {name}) {players.Count}");
             players.Add(name, role);
         }
@@ -62,7 +60,7 @@ namespace Ephemera.NScript.Example//.Script
         /// <summary>Tell the user something.</summary>
         protected void Print(string msg)
         {
-            Console.WriteLine($"Script: {msg} {GetHashCode()}");
+            Console.WriteLine($"Script: {msg} {GetHashCode()}"); //TODO1 can't find Console??
         }
         #endregion
     }

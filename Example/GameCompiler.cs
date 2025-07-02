@@ -13,7 +13,7 @@ using Ephemera.NBagOfTricks;
 namespace Ephemera.NScript.Example
 {
     /// <summary>Test compiler.</summary>
-    public class MyCompiler : CompilerCore
+    public class GameCompiler : CompilerCore
     {
         /// <summary>Info collected from the script.</summary>
         bool _gotBurger = false;
@@ -22,10 +22,12 @@ namespace Ephemera.NScript.Example
         /// <summary>Called before compiler starts.</summary>
         public override void PreCompile()
         {
-            LocalDlls = ["Ephemera.NBagOfTricks", "Ephemera.NScript"];//, "Ephemera.NScript.Example"];
+            LocalDlls = ["Ephemera.NBagOfTricks", "Ephemera.NScript"];
             //SystemDlls.Add("System");
             //SystemDlls.Add("System.Drawing");
             //Usings.Add("System.Drawing");
+            //Usings.Add("System");
+            Usings.Add("Ephemera.NScript.Example");
         }
 
         /// <summary>Called after compiler finished.</summary>
@@ -33,7 +35,7 @@ namespace Ephemera.NScript.Example
         {
             if (_gotBurger)
             {
-                Results.Add(new CompileResult(CompileResultType.Info, "Script has a cheeseburger!"));
+                RecordReport(ReportType.Info, "Script has a cheeseburger!");
             }
         }
 
@@ -41,7 +43,7 @@ namespace Ephemera.NScript.Example
         /// <param name="sline"></param>
         /// <param name="pcont"></param>
         /// <returns>True - exclude from output file</returns>
-        public override bool PreprocessLine(string sline, FileContext pcont)
+        public override bool PreprocessLine(string sline, ScriptFile pcont)
         {
             bool handled = false;
 
@@ -66,11 +68,7 @@ namespace Ephemera.NScript.Example
 
                 if (!valid)
                 {
-                    Results.Add(new CompileResult(CompileResultType.Error, $"Invalid KustomDirective: {strim}")
-                    {
-                        SourceFileName = pcont.SourceFileName,
-                        SourceLineNumber = pcont.SourceLineNumber
-                    });
+                    RecordReport(ReportType.Syntax, $"Invalid KustomDirective: {strim}", pcont.SourceFileName, -99999999 );
                 }
             }
 

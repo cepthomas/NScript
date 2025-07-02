@@ -4,7 +4,7 @@ Include("Utils.scex");
 
 KustomDirective("cheeseburger")
 
-public class Variation999 : MyScriptApi
+public class Variation999 : GameScriptApi
 {
     Utils u = new();
 

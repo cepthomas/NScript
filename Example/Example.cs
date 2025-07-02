@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using Ephemera.NBagOfTricks;
-//using Ephemera.NScript.Example.Script;
 
 
 namespace Ephemera.NScript.Example
@@ -28,16 +27,16 @@ namespace Ephemera.NScript.Example
         static int DoScriptFile()
         {
             // Compile script.
-            MyCompiler compiler = new() { ScriptPath = MiscUtils.GetSourcePath() };
-            var scriptFile = Path.Combine(compiler.ScriptPath, "Variation999.scex");
-            var apiFile = Path.Combine(compiler.ScriptPath, "MyScriptApi.cs");
+            GameCompiler compiler = new() { ScriptPath = MiscUtils.GetSourcePath() };
+            var scriptFile = Path.Combine(compiler.ScriptPath, "Game999.scex");
+            var apiFile = Path.Combine(compiler.ScriptPath, "GameScriptApi.cs");
             compiler.CompileScript(scriptFile, apiFile);
 
             if (compiler.CompiledScript is null)
             {
                 // It failed.
                 Console.WriteLine($"Compile Failed:");
-                compiler.Results.ForEach(res => Console.WriteLine($"{res}"));
+                compiler.Reports.ForEach(res => Console.WriteLine($"{res}"));
                 return 1;
             }
 
@@ -45,7 +44,7 @@ namespace Ephemera.NScript.Example
             try
             {
                 // Init script.
-                var script = compiler.CompiledScript as MyScriptApi;
+                var script = compiler.CompiledScript as GameScriptApi;
                 var res = script!.Setup();
 
                 // Run the game loop.
@@ -56,7 +55,7 @@ namespace Ephemera.NScript.Example
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Compile Exception: {ex.Message}");
+                Console.WriteLine($"Runtime Exception: {ex.Message}");
                 Console.WriteLine($"{ex.StackTrace}");
             }
             return 0;
@@ -110,7 +109,7 @@ namespace Ephemera.NScript.Example
             if (compiler.CompiledScript is null)
             {
                 // It failed.
-                compiler.Results.ForEach(res => Console.WriteLine($"{res}"));
+                compiler.Reports.ForEach(res => Console.WriteLine($"{res}"));
                 return 1;
             }
 
