@@ -27,8 +27,13 @@ namespace Ephemera.NScript.Example
         static int DoScriptFile()
         {
             // Compile script.
-            GameCompiler compiler = new() { ScriptPath = MiscUtils.GetSourcePath() };
-            var scriptFile = Path.Combine(compiler.ScriptPath, "Game999.scex");
+            GameCompiler compiler = new()
+            {
+                ScriptPath = MiscUtils.GetSourcePath(),
+                IgnoreWarnings = false,
+            };
+
+            var scriptFile = Path.Combine(compiler.ScriptPath, "Game999.csx");
             var apiFile = Path.Combine(compiler.ScriptPath, "GameScriptApi.cs");
             compiler.CompileScript(scriptFile, apiFile);
 
@@ -44,7 +49,13 @@ namespace Ephemera.NScript.Example
             try
             {
                 // Init script.
-                var script = compiler.CompiledScript as GameScriptApi;
+                var t = compiler.CompiledScript.GetType();
+
+                var script = compiler.CompiledScript as GameScriptApi; // {Game999.UserScript.Game999}
+
+                script.PrintMessage += (_, msg) => Console.WriteLine(msg);
+
+
                 var res = script!.Setup();
 
                 // Run the game loop.
@@ -53,7 +64,7 @@ namespace Ephemera.NScript.Example
                     script.Move();
                 }
             }
-            catch (Exception ex)
+            catch (Exception ex) //TODO1 handle like compiler errors.
             {
                 Console.WriteLine($"Runtime Exception: {ex.Message}");
                 Console.WriteLine($"{ex.StackTrace}");

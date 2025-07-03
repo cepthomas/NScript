@@ -18,15 +18,12 @@ namespace Ephemera.NScript.Example
         /// <summary>Info collected from the script.</summary>
         bool _gotBurger = false;
 
-        #region CompilerCore operation hooks
         /// <summary>Called before compiler starts.</summary>
         public override void PreCompile()
         {
-            LocalDlls = ["Ephemera.NBagOfTricks", "Ephemera.NScript"];
+            LocalDlls = ["Ephemera.NScript"];
+            //LocalDlls = ["Ephemera.NBagOfTricks", "Ephemera.NScript"];
             //SystemDlls.Add("System");
-            //SystemDlls.Add("System.Drawing");
-            //Usings.Add("System.Drawing");
-            //Usings.Add("System");
             Usings.Add("Ephemera.NScript.Example");
         }
 
@@ -35,7 +32,7 @@ namespace Ephemera.NScript.Example
         {
             if (_gotBurger)
             {
-                RecordReport(ReportType.Info, "Script has a cheeseburger!");
+                ReportInternal(ReportLevel.Info, "Script has a cheeseburger!");
             }
         }
 
@@ -68,12 +65,11 @@ namespace Ephemera.NScript.Example
 
                 if (!valid)
                 {
-                    RecordReport(ReportType.Syntax, $"Invalid KustomDirective: {strim}", pcont.SourceFileName, -99999999 );
+                    ReportSyntax(ReportLevel.Error, $"Invalid KustomDirective: {strim}", pcont.SourceFileName, -99999999 );
                 }
             }
 
             return handled;
-            #endregion
         }
     }
 }

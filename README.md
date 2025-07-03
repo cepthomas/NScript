@@ -9,4 +9,4 @@ Requires VS2022 and .NET8.
 No dependencies on external components.
 
 
-
+https://www.michalkomorowski.com/2016/10/roslyn-how-to-create-custom-debuggable_27.html

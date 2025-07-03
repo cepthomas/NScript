@@ -1,13 +1,14 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Diagnostics;
 using System.Text;
 
 
 namespace Ephemera.NScript.Example
 {
     /// <summary>Player roles.</summary>
-    public enum Role { Oligarch, Sycophant, Rebel, Peon }
+    public enum Role { Oligarch, Sycophant, Hero, Peon }
 
     public class GameScriptApi
     {
@@ -24,6 +25,9 @@ namespace Ephemera.NScript.Example
         /// <summary>The dice.</summary>
         readonly Random rand = new();
         #endregion
+
+        public event EventHandler<string>? PrintMessage;
+
 
         #region Host application calls game functions
         /// <summary>Initialization.</summary>
@@ -60,7 +64,8 @@ namespace Ephemera.NScript.Example
         /// <summary>Tell the user something.</summary>
         protected void Print(string msg)
         {
-            Console.WriteLine($"Script: {msg} {GetHashCode()}"); //TODO1 can't find Console??
+            PrintMessage?.Invoke(this, msg);
+            //Console.WriteLine($">>>>>> Console >>>>>>>>> Script: {msg} {GetHashCode()}"); //TODO1 can't find Console??
         }
         #endregion
     }

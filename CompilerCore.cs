@@ -16,24 +16,24 @@ using Ephemera.NBagOfTricks;
 namespace Ephemera.NScript
 {
     #region Types
-    /// <summary>Category for things reported to user.</summary>
     public enum ReportType
     {
-        None,       // Ignore.
-        Info,       // Something to tell the user.
-        Warning,    // Compiler warning. TODO1 useful?
-        Error,      // Compiler error.
-        Syntax,     // Script syntax error - user
-        //Runtime,     // Script execution error - user
-        //Other       // Custom use.
+        Internal,   // Compiler error etc.
+        Syntax,     // User script syntax error.
+        Runtime,    // User script execution error.
     }
+
+    public enum ReportLevel { None, Info, Warning, Error }
 
     /// <summary>General script result container.</summary>
     /// <remarks>Convenience constructor.</remarks>
-    public class Report()//ReportType resultType, string msg)
+    public class Report()
     {
         /// <summary>What kind.</summary>
-        public ReportType ReportType { get; set; }// = resultType;
+        public ReportType ReportType { get; set; }
+
+        /// <summary>What kind.</summary>
+        public ReportLevel Level { get; set; }
 
         /// <summary>Original source file if available/pertinent.</summary>
         public string? SourceFileName { get; set; }
@@ -47,7 +47,17 @@ namespace Ephemera.NScript
         /// <summary>For humans.</summary>
         public override string ToString()
         {
-            StringBuilder sb = new($"{ReportType}: ");
+            string slevel = Level switch
+            {
+                ReportLevel.None => "---",
+                ReportLevel.Info => "INF",
+                ReportLevel.Warning => "WRN",
+                ReportLevel.Error => "ERR",
+                _ => throw new NotImplementedException()
+            };
+
+            StringBuilder sb = new($"{slevel} {ReportType}: ");
+
             if (SourceFileName is not null)
             {
                 sb.Append($"{SourceFileName}({SourceLineNumber}) ");
@@ -108,6 +118,7 @@ namespace Ephemera.NScript
         public List<string> Usings { get; set; } =
         [
             "System.Collections.Generic",
+            "System.Diagnostics",
             "System.Text"
         ];
 
@@ -180,7 +191,7 @@ namespace Ephemera.NScript
 
                 PreCompile();
 
-                // Get and sanitize the script name.
+                // Get/sanitize the script name.
                 _scriptName = Path.GetFileNameWithoutExtension(scriptfn);
                 StringBuilder sb = new();
                 _scriptName.ForEach(c => sb.Append(char.IsLetterOrDigit(c) ? c : '_'));
@@ -194,13 +205,13 @@ namespace Ephemera.NScript
                 // Compile the processed files.
                 CompiledScript = Compile(dir!);
 
-                RecordReport(ReportType.Info, $"Compiled script: {(DateTime.Now - startTime).Milliseconds} msec.");
+                ReportInternal(ReportLevel.Info, $"Compiled script: {(DateTime.Now - startTime).Milliseconds} msec.");
 
                 PostCompile();
             }
             catch (Exception ex)
             {
-                RecordReport(ReportType.Error, $"Compile exception: {ex}.");
+                ReportInternal(ReportLevel.Error, $"Compile exception: {ex}.");
             }
         }
 
@@ -226,10 +237,10 @@ namespace Ephemera.NScript
             // Project refs like nuget.
             var localStore = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
 
-            // System dlls. { "System", "System.Private.CoreLib", "System.Runtime", "System.Collections", "System.Linq" };
+            // System dlls.
             SystemDlls.ForEach(dll => references.Add(MetadataReference.CreateFromFile(Path.Combine(dotnetStore!, dll + ".dll"))));
 
-            // Local dlls. none default.
+            // Local dlls.
             LocalDlls.ForEach(dll => references.Add(MetadataReference.CreateFromFile(Path.Combine(localStore!, dll + ".dll"))));
 
             // Emit to stream.
@@ -238,7 +249,7 @@ namespace Ephemera.NScript
             var ms = new MemoryStream();
             EmitResult result = compilation.Emit(ms);
 
-            RecordReport(ReportType.Info, $"CompilerCore: text took {(DateTime.Now - startTime).Milliseconds} msec.");
+            ReportInternal(ReportLevel.Info, $"CompilerCore: text took {(DateTime.Now - startTime).Milliseconds} msec.");
 
             if (result.Success)
             {
@@ -252,7 +263,7 @@ namespace Ephemera.NScript
             {
                 //var msg = diag.GetMessage();
                 var lineNum = diag.Location.GetLineSpan().StartLinePosition.Line + 1;
-                RecordReport(Translate(diag.Severity), diag.GetMessage(), "TODO1 src file name", lineNum);
+ //               ReportInternal(Translate(diag.Severity), diag.GetMessage(), "TODO1 src file name", lineNum);
             }
         }
         #endregion
@@ -276,7 +287,7 @@ namespace Ephemera.NScript
                 List<SyntaxTree> trees = [];
 
                 // Write the generated source files to temp build area.
-                foreach (var tocomp in _scriptFiles)//.Keys)
+                foreach (var tocomp in _scriptFiles)
                 {
                     if (tocomp.GeneratedCode.Count > 0)
                     {
@@ -291,6 +302,7 @@ namespace Ephemera.NScript
                     }
                 }
 
+                // Plain files require simpler handling.
                 foreach (var fn in _plainFiles)
                 {
                     // Build a syntax tree.
@@ -302,10 +314,28 @@ namespace Ephemera.NScript
 
                 // Build up a list of references needed to compile the code.
                 var references = new List<MetadataReference>();
+
                 // System stuff location.
                 var dotnetStore = Path.GetDirectoryName(typeof(object).Assembly.Location);
+
                 // Project refs like nuget.
                 var localStore = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
+
+                //Console.WriteLine($"dotnetStore:{dotnetStore}\nlocalStore:{localStore}");
+                //dotnetStore: C:\Program Files\dotnet\shared\Microsoft.NETCore.App\8.0.17
+                //localStore: C:\Dev\Libs\NScript\Example\bin\net8.0-windows\win-x64
+
+                ////var tsys = MetadataReference.CreateFromFile(Path.Combine(dotnetStore!, "System.dll"));
+                //var sys_assy = Assembly.LoadFile(Path.Combine(dotnetStore!, "System.dll"));
+                //var sys_types = sys_assy.GetTypes();
+                //var sys_mods = sys_assy.GetModules();
+
+                //var x_assy = Assembly.LoadFile(Path.Combine(localStore!, "Ephemera.NBagOfTricks.dll"));
+                //var x_types = x_assy.GetTypes();
+                //var x_mods = x_assy.GetModules();
+
+                Console.WriteLine("hhhhhhhhhhhhhh");
+
 
                 // System dlls.
                 SystemDlls.ForEach(dll => references.Add(MetadataReference.CreateFromFile(Path.Combine(dotnetStore!, dll + ".dll"))));
@@ -315,7 +345,7 @@ namespace Ephemera.NScript
 
                 // Emit to stream.
                 var copts = new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary);
-                var compilation = CSharpCompilation.Create($"{_scriptName}.dll", trees, references, copts);
+                var compilation = CSharpCompilation.Create($"{_scriptName}", trees, references, copts);
 
                 var ms = new MemoryStream();
                 EmitResult result = compilation.Emit(ms);
@@ -337,7 +367,7 @@ namespace Ephemera.NScript
 
                     if (script is null)
                     {
-                        RecordReport(ReportType.Syntax, $"Couldn't find type {_scriptName}.");
+                        ReportSyntax(ReportLevel.Error, $"Couldn't find type {_scriptName}.");
                     }
                 }
 
@@ -345,29 +375,38 @@ namespace Ephemera.NScript
                 foreach (var diag in result.Diagnostics)
                 {
                     // Get the original context.
-                    var fileName = diag.Location.SourceTree!.FilePath;
-                    var lineNum = diag.Location.GetLineSpan().StartLinePosition.Line; // 0-based
+                    var fileName = diag.Location != Location.None ? diag.Location.SourceTree!.FilePath : "No File";
+                    var lineNum = diag.Location != Location.None ? diag.Location.GetLineSpan().StartLinePosition.Line : -1; // 0-based
                     var msg = diag.GetMessage();
 
                     var sfiles = _scriptFiles.Where(f => f.GeneratedFileName == fileName);
                     if (sfiles.Any()) // It's a script file.
                     {
                         var sf = sfiles.First();
-                        RecordReport(ReportType.Syntax, msg, sf.SourceFileName, sf.GetSourceLineNumber(lineNum));
+                        int srcLineNum = sf.GetSourceLineNumber(lineNum);
+
+                        if (srcLineNum == -1) // something in user api or compiler, probably
+                        {
+                            ReportSyntax(Translate(diag.Severity), $"{msg} => {sf.GeneratedCode[lineNum - 1]}", sf.SourceFileName, srcLineNum);
+                        }
+                        else // regular user error
+                        {
+                            ReportSyntax(Translate(diag.Severity), msg, sf.SourceFileName, srcLineNum);
+                        }
                     }
                     else if (_plainFiles.Contains(fileName))
                     {
-                        RecordReport(ReportType.Syntax, msg, fileName, lineNum + 1);
+                        ReportSyntax(Translate(diag.Severity), msg, fileName, lineNum + 1);
                     }
-                    else // other error?
+                    else // other error? TODO1 feasible?
                     {
-                        RecordReport(ReportType.Error, msg, fileName, lineNum + 1);
+                        ReportSyntax(ReportLevel.Error, msg, fileName, lineNum + 1);
                     }
                 }
             }
             catch (Exception ex)
             {
-                RecordReport(ReportType.Error, $"Compiler exception: {ex}");
+                ReportInternal(ReportLevel.Error, $"Compiler exception: {ex}");
             }
 
             return script;
@@ -431,7 +470,7 @@ namespace Ephemera.NScript
 
                         if (!valid)
                         {
-                            RecordReport(ReportType.Syntax, $"Invalid Include: {strim}", pcont.SourceFileName, sourceLineNumber);
+                            ReportSyntax(ReportLevel.Error, $"Invalid Include: {strim}", pcont.SourceFileName, sourceLineNumber);
                         }
                     }
                     else if (PreprocessLine(strim, pcont))
@@ -509,34 +548,61 @@ namespace Ephemera.NScript
         /// <summary>Internal to our library codes.</summary>
         /// <param name="severity"></param>
         /// <returns></returns>
-        ReportType Translate(DiagnosticSeverity severity)//, bool ignoreWarnings)
+        ReportLevel Translate(DiagnosticSeverity severity)
         {
             var resType = severity switch
             {
-                DiagnosticSeverity.Hidden => ReportType.Error, //Other,
-                DiagnosticSeverity.Info => ReportType.Info,
-                DiagnosticSeverity.Warning => ReportType.Warning,
-                DiagnosticSeverity.Error => ReportType.Error,
-                _ => ReportType.None
+                DiagnosticSeverity.Hidden => ReportLevel.Warning, //Other,
+                DiagnosticSeverity.Info => ReportLevel.Info,
+                DiagnosticSeverity.Warning => ReportLevel.Warning,
+                DiagnosticSeverity.Error => ReportLevel.Error,
+                _ => ReportLevel.None
             };
 
-            return resType == ReportType.Warning && IgnoreWarnings ? ReportType.None : resType;
+            return resType == ReportLevel.Warning && IgnoreWarnings ? ReportLevel.None : resType;
         }
 
-        protected void RecordReport(ReportType resultType, string msg, string? scriptFile = null, int? lineNum = null)
+        /// <summary>Compile errors, bad paths, etc.</summary>
+        /// <param name="level"></param>
+        /// <param name="msg"></param>
+        protected void ReportInternal(ReportLevel level, string msg)
         {
-            if (scriptFile is not null)
+            if (level != ReportLevel.None)
             {
-                scriptFile = Path.GetFileName(scriptFile);
+                var res = new Report()
+                {
+                    ReportType = ReportType.Internal,
+                    Level = level,
+                    Message = msg,
+                };
+                Reports.Add(res);
             }
-            var res = new Report() //resultType, msg);
+        }
+
+        /// <summary>Script/user syntax errors.</summary>
+        /// <param name="level"></param>
+        /// <param name="msg"></param>
+        /// <param name="scriptFile"></param>
+        /// <param name="lineNum"></param>
+        protected void ReportSyntax(ReportLevel level, string msg, string? scriptFile = null, int? lineNum = null)
+        {
+            if (level != ReportLevel.None)
             {
-                ReportType = resultType,
-                Message = msg,
-                SourceFileName = scriptFile,
-                SourceLineNumber = lineNum ?? -1
-            };
-            Reports.Add(res);
+                if (scriptFile is not null)
+                {
+                    scriptFile = Path.GetFileName(scriptFile);
+                }
+
+                var res = new Report()
+                {
+                    ReportType = ReportType.Syntax,
+                    Level = level,
+                    Message = msg,
+                    SourceFileName = scriptFile,
+                    SourceLineNumber = lineNum ?? -1
+                };
+                Reports.Add(res);
+            }
         }
         #endregion
     }

@@ -1,10 +1,10 @@
 
 // Directives/preprocess: Include config and lib files.
-Include("Utils.scex");
+Include("Utils.csx");
 
 KustomDirective("cheeseburger")
 
-public class Variation999 : GameScriptApi
+public class Game999 : GameScriptApi
 {
     Utils u = new();
 
@@ -18,7 +18,7 @@ public class Variation999 : GameScriptApi
 
         CreatePlayer(Role.Oligarch, "Vladimir");
         CreatePlayer(Role.Sycophant, "Donald");
-        CreatePlayer(Role.Rebel, "Volodymyr ");
+        CreatePlayer(Role.Hero, "Volodymyr ");
         CreatePlayer(Role.Peon, "Bob");
         CreatePlayer(Role.Peon, "Bob Also");
         CreatePlayer(Role.Peon, "Yet Another Bob");
@@ -36,7 +36,7 @@ public class Variation999 : GameScriptApi
         var player = RandomPlayer();
         if (players.ContainsKey(player))
         {
-            Print($"Player be gone:{player}");
+            Print($"Player remove:{player}");
             players.Remove(player);
         }
         else

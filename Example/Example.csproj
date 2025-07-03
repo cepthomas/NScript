@@ -34,14 +34,6 @@
     </ItemGroup>
 
     <ItemGroup>
-      <Compile Remove="MyScriptApi - Copy.cs" />
-    </ItemGroup>
-
-    <!-- <ItemGroup>
-      <Compile Include="MyScriptApi.cs" />
-    </ItemGroup> -->
-
-    <ItemGroup>
         <ProjectReference Include="..\NScript.csproj" />
     </ItemGroup>
 
@@ -50,15 +42,5 @@
         <HintPath>..\lib\Ephemera.NBagOfTricks.dll</HintPath>
       </Reference>
     </ItemGroup>
-
-<!--     <ItemGroup>
-      <None Update="Utils.sctest">
-        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-      </None>
-      <None Update="Variation999.sctest">
-        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-      </None>
-    </ItemGroup>
--->
 
 </Project>
