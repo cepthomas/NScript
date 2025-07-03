@@ -8,6 +8,11 @@ public class Game999 : GameScriptApi
 {
     Utils u = new();
 
+    public void Nada()
+    {
+
+    }
+
     // Required overrides.
     public override int Setup()
     {

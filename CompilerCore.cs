@@ -345,6 +345,7 @@ namespace Ephemera.NScript
 
                 // Emit to stream.
                 var copts = new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary);
+
                 var compilation = CSharpCompilation.Create($"{_scriptName}", trees, references, copts);
 
                 var ms = new MemoryStream();
@@ -517,7 +518,8 @@ namespace Ephemera.NScript
             codeLines.AddRange(
             [
                 "",
-                $"namespace {_scriptName}.UserScript",
+                $"namespace UserScript",
+                //$"namespace {_scriptName}.UserScript",
                 "{",
             ]);
 

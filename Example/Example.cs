@@ -51,18 +51,43 @@ namespace Ephemera.NScript.Example
                 // Init script.
                 var t = compiler.CompiledScript.GetType();
 
-                var script = compiler.CompiledScript as GameScriptApi; // {Game999.UserScript.Game999}
 
-                script.PrintMessage += (_, msg) => Console.WriteLine(msg);
-
-
-                var res = script!.Setup();
-
-                // Run the game loop.
-                for (int i = 0; i < 10; i++)
+                Type? tapi;
+                while (t != null)
                 {
-                    script.Move();
+                    if (t.Name == "GameScriptApi")
+                    {
+                        tapi = t; // as Ephemera.NScript.Example.GameScriptApi;
+                    }
+                    Console.WriteLine(t.ToString());
+                    t = t.BaseType;
                 }
+
+                //UserScript.Game999
+                //Ephemera.NScript.Example.GameScriptApi
+                //System.Object
+
+
+                //var aa = compiler.CompiledScript is GameScriptApi;
+
+
+                //// Ephemera.NScript.Example.GameScriptApi
+
+
+                //var script = compiler.CompiledScript as GameScriptApi; // {Game999.UserScript.Game999}
+
+                ////script.PrintMessage += (_, msg) => Console.WriteLine(msg);
+
+
+                //var res = script!.Setup();
+
+                //// Run the game loop.
+                //for (int i = 0; i < 10; i++)
+                //{
+                //    script.Move();
+                //}
+
+
             }
             catch (Exception ex) //TODO1 handle like compiler errors.
             {
