@@ -35,6 +35,7 @@
 
     <ItemGroup>
       <Compile Remove="GameScriptApi.cs" />
+      <Compile Remove="GameScriptInterface.cs" />
     </ItemGroup>
 
     <ItemGroup>

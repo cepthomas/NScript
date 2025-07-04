@@ -34,8 +34,8 @@ namespace Ephemera.NScript.Example
             };
 
             var scriptFile = Path.Combine(compiler.ScriptPath, "Game999.csx");
-            var apiFile = Path.Combine(compiler.ScriptPath, "GameScriptApi.cs");
-            compiler.CompileScript(scriptFile, apiFile);
+            var baseFile = Path.Combine(compiler.ScriptPath, "GameScriptBase.cs");
+            compiler.CompileScript(scriptFile, baseFile);
 
             if (compiler.CompiledScript is null)
             {
@@ -49,50 +49,28 @@ namespace Ephemera.NScript.Example
             try
             {
                 // Init script.
-                var t = compiler.CompiledScript.GetType();
+                //var script = compiler.CompiledScript;
 
 
-                Type? tapi;
-                while (t != null)
+                //var aa = script is GameScriptBase;
+                // Ephemera.NScript.Example.GameScriptBase
+
+                //var script = compiler.CompiledScript as GameScriptBase; // {Game999.UserScript.Game999}
+                var script = (GameScriptBase)compiler.CompiledScript; // {Game999.UserScript.Game999}
+                //script.PrintMessage += (_, msg) => Console.WriteLine(msg);
+
+
+                var res = script!.Setup("TODO1");
+
+                // Run the game loop.
+                for (int i = 0; i < 10; i++)
                 {
-                    if (t.Name == "GameScriptApi")
-                    {
-                        tapi = t; // as Ephemera.NScript.Example.GameScriptApi;
-                    }
-                    Console.WriteLine(t.ToString());
-                    t = t.BaseType;
+                   script.Move();
                 }
-
-                //UserScript.Game999
-                //Ephemera.NScript.Example.GameScriptApi
-                //System.Object
-
-
-                //var aa = compiler.CompiledScript is GameScriptApi;
-
-
-                //// Ephemera.NScript.Example.GameScriptApi
-
-
-                //var script = compiler.CompiledScript as GameScriptApi; // {Game999.UserScript.Game999}
-
-                ////script.PrintMessage += (_, msg) => Console.WriteLine(msg);
-
-
-                //var res = script!.Setup();
-
-                //// Run the game loop.
-                //for (int i = 0; i < 10; i++)
-                //{
-                //    script.Move();
-                //}
-
-
             }
             catch (Exception ex) //TODO1 handle like compiler errors.
             {
                 Console.WriteLine($"Runtime Exception: {ex.Message}");
-                Console.WriteLine($"{ex.StackTrace}");
             }
             return 0;
         }

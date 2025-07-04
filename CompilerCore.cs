@@ -142,8 +142,8 @@ namespace Ephemera.NScript
         /// <summary>Script info.</summary>
         string _scriptName = "???";
 
-        /// <summary>Script api.</summary>
-        string _apiName = "???";
+        /// <summary>Script base/api.</summary>
+        string _baseName = "???";
 
         /// <summary>Products of file preprocess.</summary>
         readonly List<ScriptFile> _scriptFiles = [];
@@ -172,8 +172,8 @@ namespace Ephemera.NScript
         #region Public functions
         /// <summary>Run the compiler on a script file.</summary>
         /// <param name="scriptfn">Fully qualified path to main file.</param>
-        /// <param name="apifn">Fully qualified path to api file.</param>
-        public void CompileScript(string scriptfn, string apifn) // TODO1 combine with CompileText()?
+        /// <param name="basefn">Fully qualified path to api file.</param>
+        public void CompileScript(string scriptfn, string basefn) // TODO1 combine with CompileText()?
         {
             // Reset everything.
             CompiledScript = null;
@@ -186,8 +186,8 @@ namespace Ephemera.NScript
                 DateTime startTime = DateTime.Now;
 
                 // Add the api file.
-                _plainFiles.Add(apifn);
-                _apiName = Path.GetFileNameWithoutExtension(apifn);
+                _plainFiles.Add(basefn);
+                _baseName = Path.GetFileNameWithoutExtension(basefn);
 
                 PreCompile();
 
@@ -203,7 +203,7 @@ namespace Ephemera.NScript
                 PreprocessFile(pcont); // recursive function
 
                 // Compile the processed files.
-                CompiledScript = Compile(dir!);
+                Compile(dir!);
 
                 ReportInternal(ReportLevel.Info, $"Compiled script: {(DateTime.Now - startTime).Milliseconds} msec.");
 
@@ -219,7 +219,7 @@ namespace Ephemera.NScript
         /// Run the compiler on a simple text block.
         /// </summary>
         /// <param name="text">Text to compile.</param>
-        public void CompileText(string text) // TODO1 do something with this + test code.
+        public void CompileText(string text)
         {
             DateTime startTime = DateTime.Now; // for metrics
 
@@ -271,10 +271,10 @@ namespace Ephemera.NScript
         #region Private functions
         /// <summary>The actual compiler driver.</summary>
         /// <param name="baseDir">Fully qualified path to main file.</param>
-        /// <returns>Compiled script</returns>
-        object? Compile(string baseDir)
+        ///// <returns>Compiled script</returns>
+        void Compile(string baseDir)
         {
-            object? script = null;
+            CompiledScript = null;
 
             try // many ways to go wrong...
             {
@@ -362,11 +362,11 @@ namespace Ephemera.NScript
                         if (t is not null && t.Name == _scriptName)
                         {
                             // We have a good script file. Create the executable object.
-                            script = Activator.CreateInstance(t);
+                            CompiledScript = Activator.CreateInstance(t);
                         }
                     }
 
-                    if (script is null)
+                    if (CompiledScript is null)
                     {
                         ReportSyntax(ReportLevel.Error, $"Couldn't find type {_scriptName}.");
                     }
@@ -409,8 +409,6 @@ namespace Ephemera.NScript
             {
                 ReportInternal(ReportLevel.Error, $"Compiler exception: {ex}");
             }
-
-            return script;
         }
 
         /// <summary>Parse one file. Recursive to support nested Include(fn).</summary>
@@ -527,7 +525,7 @@ namespace Ephemera.NScript
             {
                 codeLines.AddRange(
                 [
-                   $"    public partial class {_scriptName} : {_apiName}",
+                   $"    public partial class {_scriptName} : {_baseName}",
                     "    {"
                 ]);
             }

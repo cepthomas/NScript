@@ -4,7 +4,7 @@ Include("Utils.csx");
 
 KustomDirective("cheeseburger")
 
-public class Game999 : GameScriptApi
+public class Game999 : GameScriptBase
 {
     Utils u = new();
 
@@ -14,7 +14,8 @@ public class Game999 : GameScriptApi
     }
 
     // Required overrides.
-    public override int Setup()
+    //public override int Setup()
+    public int Setup(string info)//, string nada="???")
     {
         Print($"Setup()");
 
@@ -34,7 +35,8 @@ public class Game999 : GameScriptApi
         return 0;
     }    
 
-    public override int Move()
+    //public override int Move()
+    public int Move()
     {
         Print($"Move()");
 
