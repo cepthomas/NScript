@@ -10,23 +10,13 @@ namespace Ephemera.NScript.Example
     internal class Example
     {
         /// <summary>
-        /// Start here.
+        /// Run script compiler using example file.
+        /// This demonstrates how the host application loads and runs scripts.
         /// </summary>
         /// <param name="_">Args</param>
         static void Main(string[] _)
         {
-            DoScriptFile();
-            //DoScriptText();
-        }
-
-        /// <summary>
-        /// Run script compiler using example file.
-        /// This demonstrates how the host application loads and runs scripts.
-        /// </summary>
-        /// <returns></returns>
-        static int DoScriptFile()
-        {
-            // Compile script.
+            ///// Compile script.
             GameCompiler compiler = new()
             {
                 ScriptPath = MiscUtils.GetSourcePath(),
@@ -42,9 +32,10 @@ namespace Ephemera.NScript.Example
                 // It failed.
                 Console.WriteLine($"Compile Failed:");
                 compiler.Reports.ForEach(res => Console.WriteLine($"{res}"));
-                return 1;
+                Environment.Exit(1);
             }
 
+            ///// Execute script.
             // Need exception handling to protect from user runtime script errors.
             try
             {
@@ -72,7 +63,8 @@ namespace Ephemera.NScript.Example
             {
                 Console.WriteLine($"Runtime Exception: {ex.Message}");
             }
-            return 0;
+
+            Environment.Exit(0);
         }
     }
 }
