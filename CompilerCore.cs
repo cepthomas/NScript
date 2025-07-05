@@ -12,7 +12,6 @@ using Ephemera.NBagOfTricks;
 using Microsoft.CodeAnalysis.Text;
 
 
-
 namespace NScript
 {
     /// <summary>Parses/compiles script file(s).</summary>
@@ -55,9 +54,6 @@ namespace NScript
 
         /// <summary>All active script source files. Provided so client can monitor for external changes.</summary>
         public IEnumerable<string> SourceFiles { get { return [.. _scriptFiles.Select(f => f.SourceFileName)]; } }
-
-        ///// <summary>Compile products are here.</summary>
-        //public string TempDir { get; set; } = "???";
         #endregion
 
         #region Fields
@@ -95,7 +91,7 @@ namespace NScript
         /// <summary>Run the compiler on a script file.</summary>
         /// <param name="scriptfn">Fully qualified path to main file.</param>
         /// <param name="basefn">Fully qualified path to api file.</param>
-        public void CompileScript(string scriptfn, string basefn) // TODO1 combine with CompileText()?
+        public void CompileScript(string scriptfn, string basefn)
         {
             // Reset everything.
             CompiledScript = null;
@@ -136,64 +132,11 @@ namespace NScript
                 ReportInternal(ReportLevel.Error, $"Compile exception: {ex}.");
             }
         }
-
-        /// <summary>
-        /// Run the compiler on a simple text block. TODO1 useful?
-        /// </summary>
-        /// <param name="text">Text to compile.</param>
-        public void CompileText(string text)
-        {
-            DateTime startTime = DateTime.Now; // for metrics
-
-            List<SyntaxTree> trees = [];
-
-            // Build a syntax tree.
-            CSharpParseOptions popts = new();
-            SyntaxTree tree = CSharpSyntaxTree.ParseText(text, popts);
-            trees.Add(tree);
-
-            // We now build up a list of references needed to compile the code.
-            var references = new List<MetadataReference>();
-            // System stuff location.
-            var dotnetStore = Path.GetDirectoryName(typeof(object).Assembly.Location);
-            // Project refs like nuget.
-            var localStore = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
-
-            // System dlls.
-            SystemDlls.ForEach(dll => references.Add(MetadataReference.CreateFromFile(Path.Combine(dotnetStore!, dll + ".dll"))));
-
-            // Local dlls.
-            LocalDlls.ForEach(dll => references.Add(MetadataReference.CreateFromFile(Path.Combine(localStore!, dll + ".dll"))));
-
-            // Emit to stream.
-            var copts = new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary);
-            var compilation = CSharpCompilation.Create($"{_scriptName}.dll", trees, references, copts);
-            var ms = new MemoryStream();
-            EmitResult result = compilation.Emit(ms);
-
-            ReportInternal(ReportLevel.Info, $"CompilerCore: text took {(DateTime.Now - startTime).Milliseconds} msec.");
-
-            if (result.Success)
-            {
-                // Load into currently running assembly.
-                var assy = Assembly.Load(ms.ToArray());
-                var types = assy.GetTypes();
-            }
-
-            // Collect results.
-            foreach (var diag in result.Diagnostics)
-            {
-                //var msg = diag.GetMessage();
-                var lineNum = diag.Location.GetLineSpan().StartLinePosition.Line + 1;
- //               ReportInternal(Translate(diag.Severity), diag.GetMessage(), "TODO1 src file name", lineNum);
-            }
-        }
         #endregion
 
         #region Private functions
         /// <summary>The actual compiler driver.</summary>
         /// <param name="baseDir">Fully qualified path to main file.</param>
-        ///// <returns>Compiled script</returns>
         void Compile(string baseDir)
         {
             CompiledScript = null;
@@ -207,33 +150,21 @@ namespace NScript
 
                 // Assemble constituents.
                 List<SyntaxTree> trees = [];
-                var encoding = Encoding.ASCII;
+                var encoding = Encoding.UTF8; // ASCII?
 
                 // Write the generated source files to temp build area.
                 foreach (var tocomp in _scriptFiles)
                 {
                     if (tocomp.GeneratedCode.Count > 0)
                     {
-                        // Create a file that can be found in the pdb.
+                        // Create a file that can be placed in the pdb.
                         string fullpath = Path.Combine(tempDir, tocomp.GeneratedFileName);
                         File.WriteAllLines(fullpath, tocomp.GeneratedCode);
                         // Build a syntax tree.
                         string code = File.ReadAllText(fullpath, encoding);
                         CSharpParseOptions popts = new();
-                        //popts
-                        //SyntaxTree tree = CSharpSyntaxTree.ParseText(string.Join(Environment.NewLine, tocomp.GeneratedCode),
-                        //    popts, tocomp.GeneratedFileName);
-                        SyntaxTree tree = CSharpSyntaxTree.ParseText(text: string.Join(Environment.NewLine, tocomp.GeneratedCode),
-                            path: fullpath, options: popts, encoding: encoding);
+                        SyntaxTree tree = CSharpSyntaxTree.ParseText(text: code, path: fullpath, options: popts, encoding: encoding);
                         trees.Add(tree);
-
-
-
-
-                        //// Direct:: Build a syntax tree.
-                        //CSharpParseOptions popts = new();
-                        //SyntaxTree tree = CSharpSyntaxTree.ParseText(string.Join(Environment.NewLine, tocomp.GeneratedCode), popts, tocomp.GeneratedFileName);
-                        //trees.Add(tree);
                     }
                 }
 
@@ -243,12 +174,7 @@ namespace NScript
                     // Build a syntax tree.
                     string code = File.ReadAllText(fn, encoding);
                     CSharpParseOptions popts = new();
-                    //SyntaxTree tree = CSharpSyntaxTree.ParseText(code, popts, fn);
-
-
-                    SyntaxTree tree = CSharpSyntaxTree.ParseText( path: fn,     text: code,
-    options: popts, encoding: encoding);
-
+                    SyntaxTree tree = CSharpSyntaxTree.ParseText(text: code, path: fn, options: popts, encoding: encoding);
                     trees.Add(tree);
                 }
 
@@ -267,41 +193,7 @@ namespace NScript
                 // Local dlls.
                 LocalDlls.ForEach(dll => references.Add(MetadataReference.CreateFromFile(Path.Combine(localStore!, dll + ".dll"))));
 
-
-
-                //////////////////////////////////////////////////////////
-                //var encoding = Encoding.UTF8;
-                //var buffer = encoding.GetBytes(code);
-                //var sourceText = SourceText.From(buffer, buffer.Length, encoding, canBeEmbedded: true);
-
-                //var assemblyName = Path.GetRandomFileName();
-                //var symbolsName = Path.ChangeExtension(assemblyName, "pdb");
-                //var sourceCodePath = "generated.cs";
-
-                //var optimizationLevel = OptimizationLevel.Debug;
-                //var copts = new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary)
-                //        .WithOptimizationLevel(optimizationLevel)
-                //        .WithPlatform(Platform.AnyCpu);
-                //var compilation = CSharpCompilation.Create(assemblyName, trees, references, copts);
-
-                //using var assemblyStream = new MemoryStream();
-                //using var symbolsStream = new MemoryStream();
-                //var emitOptions = new EmitOptions().
-                //    WithDebugInformationFormat(DebugInformationFormat.PortablePdb).
-                //    WithPdbFilePath(symbolsName);
-
-                //var embeddedTexts = new List<EmbeddedText> { EmbeddedText.FromSource(sourceCodePath, sourceText) };
-                //EmitResult result = compilation.Emit(
-                //    peStream: assemblyStream,
-                //    pdbStream: symbolsStream,
-                //    embeddedTexts: embeddedTexts,
-                //    options: emitOptions);
-
-
-                //////////////////////////////////////////////////////////
-
-
-                // Emit to stream.
+                // Emit the whole mess to streams.
                 using var ms = new MemoryStream();
                 using var pdbs = new MemoryStream();
 
@@ -313,10 +205,7 @@ namespace NScript
                     WithDefaultSourceFileEncoding(encoding);
 
                 var result = compilation.Emit(peStream: ms, pdbStream: pdbs, options: emitOptions);
-
-                //Emitting to file is available through an extension method in the Microsoft.CodeAnalysis namespace
                 //var result = compilation.Emit("output.exe", "output.pdb");
-
 
                 if (result.Success)
                 {

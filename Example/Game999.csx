@@ -8,19 +8,13 @@ public class Game999 : GameScriptBase
 {
     Utils u = new();
 
-    public void Nada()
-    {
-
-    }
-
     // Required overrides.
-    //public override int Setup()
-    public override int Setup(string info)//, string nada="???")
+    public override int Setup(string info)
     {
-        Print($"Setup()");
+        Print($"Setup(): {info}");
 
-        worldX = 100;
-        worldY = 50;
+        WorldX = 100;
+        WorldY = 50;
 
         CreatePlayer(Role.Oligarch, "Vladimir");
         CreatePlayer(Role.Sycophant, "Donald");
@@ -29,22 +23,22 @@ public class Game999 : GameScriptBase
         CreatePlayer(Role.Peon, "Bob Also");
         CreatePlayer(Role.Peon, "Yet Another Bob");
 
-        bool b = u.Boing(0);
+        bool b = u.Boing(-1);
+        //bool b = u.Boing(0);
         //bool b = u.Boing(60);
 
         return 0;
     }    
 
-    //public override int Move()
     public override int Move()
     {
         Print($"Move()");
 
         var player = RandomPlayer();
-        if (players.ContainsKey(player))
+        if (Players.ContainsKey(player))
         {
-            Print($"Player remove:{player}");
-            players.Remove(player);
+            Print($"Player killed: {player} {Players[player]}");
+            Players.Remove(player);
         }
         else
         {

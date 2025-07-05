@@ -28,12 +28,15 @@
       <Compile Remove="Example\**" />
       <Compile Remove="lib\**" />
       <Compile Remove="Script\**" />
+      <Compile Remove="_old\**" />
       <EmbeddedResource Remove="Example\**" />
       <EmbeddedResource Remove="lib\**" />
       <EmbeddedResource Remove="Script\**" />
+      <EmbeddedResource Remove="_old\**" />
       <None Remove="Example\**" />
       <None Remove="lib\**" />
       <None Remove="Script\**" />
+      <None Remove="_old\**" />
     </ItemGroup>
 
     <ItemGroup>
@@ -45,6 +48,7 @@
 
     <ItemGroup>
       <None Remove="NScript-half-assed.zip" />
+      <None Remove="NScript-works-plus-cruft.zip" />
     </ItemGroup>
 
     <ItemGroup>

@@ -3,7 +3,9 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Diagnostics;
 using System.Text;
+using System.IO;
 
+#nullable enable
 
 namespace NScript.Example
 {
@@ -15,25 +17,34 @@ namespace NScript.Example
         #region Fields
         /// <summary>Roll the dice.</summary>
         readonly Random rand = new();
+
+        TextWriter? writeStream;
         #endregion
-
-        #region Properties - dynamic things shared between host and script at runtime
+ 
+        #region Properties - dynamic things shared between host and script at runtime TODO1? should be Globals not static
         /// <summary>All the players. Key is name.</summary>
-        public Dictionary<string, Role> Players { get; init; } = [];
+        public static Dictionary<string, Role> Players { get; } = [];
 
         /// <summary>Board size.</summary>
-        public int WorldX { get; set; } = 50;
+        public static int WorldX { get; set; } = 50;
 
         /// <summary>Board size.</summary>
-        public int WorldY { get; set; } = 50;
+        public static int WorldY { get; set; } = 50;
 
         /// <summary>Main -> Script</summary>
-        public double RealTime { get; set; } = 0.0;
+        public static double RealTime { get; set; } = 0.0;
+        #endregion
+
+        #region Internal functions
+        public void Init(TextWriter stream)
+        {
+            writeStream = stream;
+        }
         #endregion
 
         #region Host application calls game functions
         /// <summary>Initialization.</summary>
-        public virtual int Setup(string info) //TODO1 text stream out
+        public virtual int Setup(string info)
         {
             throw new NotImplementedException();
         }
@@ -56,18 +67,23 @@ namespace NScript.Example
         /// <summary>Roll the dice.</summary>
         protected string RandomPlayer()
         {
-            Print($"RandomPlayer: {Players.Count}");
-            int i = rand.Next(0, Players.Count);
-            var player = Players.ToList()[i];
-            Print($"RandomPlayer: {player.Key}");
-            return player.Key;
+            if (Players.Count > 0)
+            {
+                int i = rand.Next(0, Players.Count);
+                var player = Players.ToList()[i];
+                Print($"RandomPlayer: {player.Key}");
+                return player.Key;
+            }
+            else
+            {
+                return "All players dead!";
+            }
         }
 
         /// <summary>Tell the user something.</summary>
         protected void Print(string msg)
         {
-            //PrintMessage?.Invoke(this, msg);
-            Console.WriteLine($">>>>>> TODO1 Console >>>>>>>>> Script: {msg} {GetHashCode()}"); //TODO1 can't find Console??
+            writeStream?.WriteLine(msg);
         }
         #endregion
     }
