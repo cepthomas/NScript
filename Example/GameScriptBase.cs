@@ -70,6 +70,7 @@ namespace NScript.Example
             if (Players.Count > 0)
             {
                 int i = rand.Next(0, Players.Count);
+                //i = 99;
                 var player = Players.ToList()[i];
                 Print($"RandomPlayer: {player.Key}");
                 return player.Key;

@@ -95,14 +95,14 @@ namespace NScript
     #region TODO1 these?
 
     // // https://carljohansen.wordpress.com/2020/05/09/compiling-expression-trees-with-roslyn-without-memory-leaks-2/
-
-    // In researching the problem I saw hints of a potential solution in a new feature of .NET Core 3 called “collectible AssemblyLoadContexts”.  AssemblyLoadContext has been around for a long time, but collectible ALCs, with an Unload method, are new.
-
+    // In researching the problem I saw hints of a potential solution in a new feature of .NET Core 3 called 
+    // “collectible AssemblyLoadContexts”.  AssemblyLoadContext has been around for a long time, but 
+    // collectible ALCs, with an Unload method, are new.
     // > SearchFilterCompiler.cs
     
     /*
     /// <summary>
-    /// TODO1 this?? This helper can help start up Roslyn before first call so that there's no
+    /// This helper can help start up Roslyn before first call so that there's no
     /// long startup delay for first script execution and you can also optionally
     /// shut Roslyn down and kill the VBCSCompiler that otherwise stays loaded
     /// even after shutting down your application.

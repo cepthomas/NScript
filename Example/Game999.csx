@@ -23,8 +23,7 @@ public class Game999 : GameScriptBase
         CreatePlayer(Role.Peon, "Bob Also");
         CreatePlayer(Role.Peon, "Yet Another Bob");
 
-        bool b = u.Boing(-1);
-        //bool b = u.Boing(0);
+        bool b = u.Boing(0);
         //bool b = u.Boing(60);
 
         return 0;
