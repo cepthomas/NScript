@@ -10,7 +10,7 @@ using System.Drawing;
 using Ephemera.NBagOfTricks;
 
 
-namespace Ephemera.NScript.Example
+namespace NScript.Example
 {
     /// <summary>Test compiler.</summary>
     public class GameCompiler : CompilerCore
@@ -21,10 +21,10 @@ namespace Ephemera.NScript.Example
         /// <summary>Called before compiler starts.</summary>
         public override void PreCompile()
         {
-            LocalDlls = ["Ephemera.NScript"];
-            //LocalDlls = ["Ephemera.NBagOfTricks", "Ephemera.NScript"];
+            LocalDlls = ["NScript"];
+            //LocalDlls = ["Ephemera.NBagOfTricks", "NScript"];
             //SystemDlls.Add("System");
-            Usings.Add("Ephemera.NScript.Example");
+            Usings.Add("NScript.Example");
         }
 
         /// <summary>Called after compiler finished.</summary>

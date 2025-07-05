@@ -5,15 +5,15 @@ using System.Diagnostics;
 using System.Text;
 
 
-namespace Ephemera.NScript.Example
+namespace NScript.Example
 {
     /// <summary>Player roles.</summary>
     public enum Role { Oligarch, Sycophant, Hero, Peon }
 
     /// <summary>Script type abstraction.</summary>
-    interface IScript //: IDisposable
-    {
-    }
+    //interface IScript //: IDisposable
+    //{
+    //}
 
     public class GameScriptBase
     {
@@ -35,13 +35,13 @@ namespace Ephemera.NScript.Example
 
 
         // from existing app:
-        // #region Properties - dynamic things shared between host and script at runtime
-        // /// <summary>Main -> Script</summary>
-        // public double RealTime { get; set; } = 0.0;
+        #region Properties - dynamic things shared between host and script at runtime
+        /// <summary>Main -> Script</summary>
+        public double RealTime { get; set; } = 0.0;
 
         // /// <summary>Main -> Script -> Main</summary>
         // public int FrameRate { get; set; } = 0;
-        // #endregion
+        #endregion
 
         // /// <summary>Initialization.</summary>
         // int Setup(string info);
@@ -64,8 +64,6 @@ namespace Ephemera.NScript.Example
         {
             throw new NotImplementedException();
         }
-
-
         #endregion
 
         #region Common game functions

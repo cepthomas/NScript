@@ -15,7 +15,7 @@ public class Game999 : GameScriptBase
 
     // Required overrides.
     //public override int Setup()
-    public int Setup(string info)//, string nada="???")
+    public override int Setup(string info)//, string nada="???")
     {
         Print($"Setup()");
 
@@ -36,7 +36,7 @@ public class Game999 : GameScriptBase
     }    
 
     //public override int Move()
-    public int Move()
+    public override int Move()
     {
         Print($"Move()");
 

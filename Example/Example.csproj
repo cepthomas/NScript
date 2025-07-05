@@ -12,8 +12,8 @@
         <!-- <AllowUnsafeBlocks>true</AllowUnsafeBlocks> -->
         <Description>C# script compiler</Description>
         <Copyright>MIT License</Copyright>
-        <RootNamespace>Ephemera.NScript.Example</RootNamespace>
-        <AssemblyName>Ephemera.NScript.Example</AssemblyName>
+        <RootNamespace>NScript.Example</RootNamespace>
+        <AssemblyName>NScript.Example</AssemblyName>
         <!-- <DefineConstants>DEBUG;TRACE</DefineConstants> -->
         <NoWarn>CS1591</NoWarn>
         <Nullable>enable</Nullable>
@@ -23,6 +23,12 @@
         <!-- en none -->
 
     </PropertyGroup>
+
+    <ItemGroup>
+      <Compile Remove="temp\**" />
+      <EmbeddedResource Remove="temp\**" />
+      <None Remove="temp\**" />
+    </ItemGroup>
 
     <ItemGroup>
         <ProjectReference Include="..\NScript.csproj" />

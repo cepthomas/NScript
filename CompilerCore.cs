@@ -9,90 +9,12 @@ using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.Emit;
 using Ephemera.NBagOfTricks;
+using Microsoft.CodeAnalysis.Text;
 
 
-// https://carljohansen.wordpress.com/2020/05/09/compiling-expression-trees-with-roslyn-without-memory-leaks-2/
 
-namespace Ephemera.NScript
+namespace NScript
 {
-    #region Types
-    public enum ReportType
-    {
-        Internal,   // Compiler error etc.
-        Syntax,     // User script syntax error.
-        Runtime,    // User script execution error.
-    }
-
-    public enum ReportLevel { None, Info, Warning, Error }
-
-    /// <summary>General script result container.</summary>
-    /// <remarks>Convenience constructor.</remarks>
-    public class Report()
-    {
-        /// <summary>What kind.</summary>
-        public ReportType ReportType { get; set; }
-
-        /// <summary>What kind.</summary>
-        public ReportLevel Level { get; set; }
-
-        /// <summary>Original source file if available/pertinent.</summary>
-        public string? SourceFileName { get; set; }
-
-        /// <summary>Original source line number 1-based. -1 means inapplicable or unknown.</summary>
-        public int SourceLineNumber { get; set; } = -1;
-
-        /// <summary>Content.</summary>
-        public string Message { get; set; } = "???";
-
-        /// <summary>For humans.</summary>
-        public override string ToString()
-        {
-            string slevel = Level switch
-            {
-                ReportLevel.None => "---",
-                ReportLevel.Info => "INF",
-                ReportLevel.Warning => "WRN",
-                ReportLevel.Error => "ERR",
-                _ => throw new NotImplementedException()
-            };
-
-            StringBuilder sb = new($"{slevel} {ReportType}: ");
-
-            if (SourceFileName is not null)
-            {
-                sb.Append($"{SourceFileName}({SourceLineNumber}) ");
-            }
-            sb.Append($"[{Message}]");
-            return sb.ToString();
-        }
-    }
-
-    /// <summary>Parser file context class - one per original source file.</summary>
-    public class ScriptFile(string fn)
-    {
-        /// <summary>Original source file.</summary>
-        public string SourceFileName { get; init; } = fn;
-
-        /// <summary>Modified file to feed the compiler.</summary>
-        public string GeneratedFileName { get; set; } = "???";
-
-        /// <summary>The script code lines to feed the compiler.</summary>
-        public List<string> GeneratedCode { get; set; } = [];
-
-        /// <summary>key is GeneratedCode line number aka index, value is Source line number.</summary>
-        public Dictionary<int, int> LineNumberMap { get; set; } = [];
-
-        /// <summary></summary>
-        /// <param name="lineNum"></param>
-        /// <returns></returns>
-        public int GetSourceLineNumber(int lineNum)
-        {
-            int ln = LineNumberMap.TryGetValue(lineNum, out int value) ? value : -1;
-            return ln;
-        }
-    }
-    #endregion
-
     /// <summary>Parses/compiles script file(s).</summary>
     public class CompilerCore
     {
@@ -131,11 +53,11 @@ namespace Ephemera.NScript
         /// <summary>Accumulated errors and other bits of information - for user presentation.</summary>
         public List<Report> Reports { get; } = [];
 
-        /// <summary>All active script source files. Provided so client can monitor for external changes. TODO1 used?</summary>
+        /// <summary>All active script source files. Provided so client can monitor for external changes.</summary>
         public IEnumerable<string> SourceFiles { get { return [.. _scriptFiles.Select(f => f.SourceFileName)]; } }
 
-        /// <summary>Compile products are here.</summary>
-        public string TempDir { get; set; } = "???";
+        ///// <summary>Compile products are here.</summary>
+        //public string TempDir { get; set; } = "???";
         #endregion
 
         #region Fields
@@ -216,7 +138,7 @@ namespace Ephemera.NScript
         }
 
         /// <summary>
-        /// Run the compiler on a simple text block.
+        /// Run the compiler on a simple text block. TODO1 useful?
         /// </summary>
         /// <param name="text">Text to compile.</param>
         public void CompileText(string text)
@@ -279,26 +201,39 @@ namespace Ephemera.NScript
             try // many ways to go wrong...
             {
                 // Create temp output area and/or clean it.
-                TempDir = Path.Combine(baseDir, "temp");
-                Directory.CreateDirectory(TempDir);
-                Directory.GetFiles(TempDir).ForEach(f => File.Delete(f));
+                var tempDir = Path.Combine(baseDir, "temp");
+                Directory.CreateDirectory(tempDir);
+                Directory.GetFiles(tempDir).ForEach(f => File.Delete(f));
 
                 // Assemble constituents.
                 List<SyntaxTree> trees = [];
+                var encoding = Encoding.ASCII;
 
                 // Write the generated source files to temp build area.
                 foreach (var tocomp in _scriptFiles)
                 {
                     if (tocomp.GeneratedCode.Count > 0)
                     {
-                        string fullpath = Path.Combine(TempDir, tocomp.GeneratedFileName);
+                        // Create a file that can be found in the pdb.
+                        string fullpath = Path.Combine(tempDir, tocomp.GeneratedFileName);
                         File.WriteAllLines(fullpath, tocomp.GeneratedCode);
-
                         // Build a syntax tree.
-                        string code = File.ReadAllText(fullpath);
+                        string code = File.ReadAllText(fullpath, encoding);
                         CSharpParseOptions popts = new();
-                        SyntaxTree tree = CSharpSyntaxTree.ParseText(code, popts, tocomp.GeneratedFileName);
+                        //popts
+                        //SyntaxTree tree = CSharpSyntaxTree.ParseText(string.Join(Environment.NewLine, tocomp.GeneratedCode),
+                        //    popts, tocomp.GeneratedFileName);
+                        SyntaxTree tree = CSharpSyntaxTree.ParseText(text: string.Join(Environment.NewLine, tocomp.GeneratedCode),
+                            path: fullpath, options: popts, encoding: encoding);
                         trees.Add(tree);
+
+
+
+
+                        //// Direct:: Build a syntax tree.
+                        //CSharpParseOptions popts = new();
+                        //SyntaxTree tree = CSharpSyntaxTree.ParseText(string.Join(Environment.NewLine, tocomp.GeneratedCode), popts, tocomp.GeneratedFileName);
+                        //trees.Add(tree);
                     }
                 }
 
@@ -306,9 +241,14 @@ namespace Ephemera.NScript
                 foreach (var fn in _plainFiles)
                 {
                     // Build a syntax tree.
-                    string code = File.ReadAllText(fn);
+                    string code = File.ReadAllText(fn, encoding);
                     CSharpParseOptions popts = new();
-                    SyntaxTree tree = CSharpSyntaxTree.ParseText(code, popts, fn);
+                    //SyntaxTree tree = CSharpSyntaxTree.ParseText(code, popts, fn);
+
+
+                    SyntaxTree tree = CSharpSyntaxTree.ParseText( path: fn,     text: code,
+    options: popts, encoding: encoding);
+
                     trees.Add(tree);
                 }
 
@@ -321,40 +261,67 @@ namespace Ephemera.NScript
                 // Project refs like nuget.
                 var localStore = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
 
-                //Console.WriteLine($"dotnetStore:{dotnetStore}\nlocalStore:{localStore}");
-                //dotnetStore: C:\Program Files\dotnet\shared\Microsoft.NETCore.App\8.0.17
-                //localStore: C:\Dev\Libs\NScript\Example\bin\net8.0-windows\win-x64
-
-                ////var tsys = MetadataReference.CreateFromFile(Path.Combine(dotnetStore!, "System.dll"));
-                //var sys_assy = Assembly.LoadFile(Path.Combine(dotnetStore!, "System.dll"));
-                //var sys_types = sys_assy.GetTypes();
-                //var sys_mods = sys_assy.GetModules();
-
-                //var x_assy = Assembly.LoadFile(Path.Combine(localStore!, "Ephemera.NBagOfTricks.dll"));
-                //var x_types = x_assy.GetTypes();
-                //var x_mods = x_assy.GetModules();
-
-                Console.WriteLine("hhhhhhhhhhhhhh");
-
-
                 // System dlls.
                 SystemDlls.ForEach(dll => references.Add(MetadataReference.CreateFromFile(Path.Combine(dotnetStore!, dll + ".dll"))));
 
                 // Local dlls.
                 LocalDlls.ForEach(dll => references.Add(MetadataReference.CreateFromFile(Path.Combine(localStore!, dll + ".dll"))));
 
-                // Emit to stream.
-                var copts = new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary);
 
+
+                //////////////////////////////////////////////////////////
+                //var encoding = Encoding.UTF8;
+                //var buffer = encoding.GetBytes(code);
+                //var sourceText = SourceText.From(buffer, buffer.Length, encoding, canBeEmbedded: true);
+
+                //var assemblyName = Path.GetRandomFileName();
+                //var symbolsName = Path.ChangeExtension(assemblyName, "pdb");
+                //var sourceCodePath = "generated.cs";
+
+                //var optimizationLevel = OptimizationLevel.Debug;
+                //var copts = new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary)
+                //        .WithOptimizationLevel(optimizationLevel)
+                //        .WithPlatform(Platform.AnyCpu);
+                //var compilation = CSharpCompilation.Create(assemblyName, trees, references, copts);
+
+                //using var assemblyStream = new MemoryStream();
+                //using var symbolsStream = new MemoryStream();
+                //var emitOptions = new EmitOptions().
+                //    WithDebugInformationFormat(DebugInformationFormat.PortablePdb).
+                //    WithPdbFilePath(symbolsName);
+
+                //var embeddedTexts = new List<EmbeddedText> { EmbeddedText.FromSource(sourceCodePath, sourceText) };
+                //EmitResult result = compilation.Emit(
+                //    peStream: assemblyStream,
+                //    pdbStream: symbolsStream,
+                //    embeddedTexts: embeddedTexts,
+                //    options: emitOptions);
+
+
+                //////////////////////////////////////////////////////////
+
+
+                // Emit to stream.
+                using var ms = new MemoryStream();
+                using var pdbs = new MemoryStream();
+
+                var copts = new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary);
                 var compilation = CSharpCompilation.Create($"{_scriptName}", trees, references, copts);
 
-                var ms = new MemoryStream();
-                EmitResult result = compilation.Emit(ms);
+                var emitOptions = new EmitOptions().
+                    WithDebugInformationFormat(DebugInformationFormat.PortablePdb).
+                    WithDefaultSourceFileEncoding(encoding);
+
+                var result = compilation.Emit(peStream: ms, pdbStream: pdbs, options: emitOptions);
+
+                //Emitting to file is available through an extension method in the Microsoft.CodeAnalysis namespace
+                //var result = compilation.Emit("output.exe", "output.pdb");
+
 
                 if (result.Success)
                 {
                     // Load into currently running assembly and locate the new script.
-                    var assy = Assembly.Load(ms.ToArray());
+                    var assy = Assembly.Load(ms.ToArray(), pdbs.ToArray());
                     var types = assy.GetTypes();
 
                     foreach (Type t in types)
@@ -399,7 +366,7 @@ namespace Ephemera.NScript
                     {
                         ReportSyntax(Translate(diag.Severity), msg, fileName, lineNum + 1);
                     }
-                    else // other error? TODO1 feasible?
+                    else // other error?
                     {
                         ReportSyntax(ReportLevel.Error, msg, fileName, lineNum + 1);
                     }
@@ -407,7 +374,7 @@ namespace Ephemera.NScript
             }
             catch (Exception ex)
             {
-                ReportInternal(ReportLevel.Error, $"Compiler exception: {ex}");
+                ReportInternal(ReportLevel.Error, $"Compiler exception: {ex.Message}");
             }
         }
 
