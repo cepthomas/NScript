@@ -1,12 +1,13 @@
 
-// Directives/preprocess: Include config and lib files.
-Include("Utils.csx");
-
-KustomDirective("cheeseburger")
+// Preprocesser directives
+#:include Utils.csx
+#:kustom cheeseburger
 
 public class Game999 : GameScriptBase
 {
     Utils u = new();
+
+    JUNK
 
     // Required overrides.
     public override int Setup(string info)
