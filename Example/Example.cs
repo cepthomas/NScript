@@ -14,14 +14,14 @@ namespace NScript.Example
         /// Run script compiler using example file.
         /// This demonstrates how a host application loads and runs scripts.
         /// </summary>
-        /// <returns>TODO1</returns>
+        /// <returns>Exit code: 0=ok 1=compiler or syntax error 2=runtime error</returns>
         public int Run()
         {
             ///// Compile script with application options.
             GameCompiler compiler = new()
             {
                 ScriptPath = MiscUtils.GetSourcePath(),
-                IgnoreWarnings = false,
+                IgnoreWarnings = true //false,
             };
 
             var scriptFile = Path.Combine(compiler.ScriptPath, "Game999.csx");
@@ -59,7 +59,7 @@ namespace NScript.Example
             }
             catch (Exception ex)
             {
-                compiler.HandleRuntimeException(ex);
+                compiler.HandleRuntimeException(ex);/////// isn't really part of compiler??
                 return 2;
             }
 
@@ -82,7 +82,7 @@ namespace NScript.Example
         {
             if (Directives.TryGetValue("kustom", out string? value))
             {
-                ReportInternal(ReportLevel.Info, $"Script has {value}!");
+                Console.WriteLine($"Script has {value}!");
             }
         }
 
@@ -104,7 +104,8 @@ namespace NScript.Example
     {
         static void Main(string[] _)
         {
-            Environment.Exit(new Example().Run());
+            var app = new Example();
+            Environment.Exit(app.Run());
         }
     }
 }

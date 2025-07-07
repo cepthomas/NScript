@@ -14,7 +14,6 @@ using System.Threading.Tasks;
 
 namespace NScript
 {
-    #region Types
     public enum ReportType
     {
         Internal,   // Compiler error etc.
@@ -28,10 +27,10 @@ namespace NScript
     public class Report()
     {
         /// <summary>What kind.</summary>
-        public ReportType ReportType { get; set; }
+        public ReportType ReportType { get; set; } = ReportType.Internal;
 
         /// <summary>What kind.</summary>
-        public ReportLevel Level { get; set; }
+        public ReportLevel Level { get; set; } = ReportLevel.None;
 
         /// <summary>Original source file if available/pertinent.</summary>
         public string? SourceFileName { get; set; }
@@ -89,5 +88,10 @@ namespace NScript
             return ln;
         }
     }
-    #endregion
+
+    /// <summary>Reporting hard errors.</summary>
+    public class ScriptException(Report report) : Exception()
+    {
+        public Report Report { get; init; } = report;
+    }
 }

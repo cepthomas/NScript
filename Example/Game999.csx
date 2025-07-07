@@ -1,6 +1,6 @@
 
 // Preprocesser directives
-#:include Utils.csxx
+#:include Utils.csx
 #:kustom cheeseburger
 #:dir_no_arg
 
