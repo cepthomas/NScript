@@ -34,9 +34,9 @@
     </ItemGroup>
 
     <ItemGroup>
-      <Reference Include="Ephemera.NBagOfTricks">
-        <HintPath>..\lib\Ephemera.NBagOfTricks.dll</HintPath>
-      </Reference>
+        <Reference Include="Ephemera.NBagOfTricks">
+          <HintPath>..\lib\Ephemera.NBagOfTricks.dll</HintPath>
+        </Reference>
     </ItemGroup>
 
 </Project>

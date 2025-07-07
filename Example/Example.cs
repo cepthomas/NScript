@@ -18,21 +18,21 @@ namespace NScript.Example
         public int Run()
         {
             ///// Compile script with application options.
-            GameCompiler compiler = new()
+            GameEngine engine = new()
             {
                 ScriptPath = MiscUtils.GetSourcePath(),
                 IgnoreWarnings = true //false,
             };
 
-            var scriptFile = Path.Combine(compiler.ScriptPath, "Game999.csx");
-            var baseFile = Path.Combine(compiler.ScriptPath, "GameScriptBase.cs");
+            var scriptFile = Path.Combine(engine.ScriptPath, "Game999.csx");
+            var baseFile = Path.Combine(engine.ScriptPath, "GameScriptBase.cs");
 
-            compiler.CompileScript(scriptFile, "GameScriptBase", [baseFile]);
+            engine.CompileScript(scriptFile, "GameScriptBase", [baseFile]);
 
-            if (compiler.CompiledScript is null)
+            if (engine.CompiledScript is null)
             {
-                Console.WriteLine($"Compile Failed:");
-                compiler.Reports.ForEach(rep => Console.WriteLine($"{rep}"));
+                Console.WriteLine($"Compile failed:");
+                engine.Reports.ForEach(rep => Console.WriteLine($"{rep}"));
                 return 1;
             }
 
@@ -40,7 +40,7 @@ namespace NScript.Example
             try
             {
                 // Init script.
-                var script = compiler.CompiledScript;
+                var script = engine.CompiledScript;
                 var scriptType = script.GetType();
 
                 // Cache methods.
@@ -50,7 +50,7 @@ namespace NScript.Example
 
                 // Run the game.
                 methodInit.Invoke(script, [Console.Out]);
-                methodSetup.Invoke(script, ["Here I am!!!", "too many"]);
+                methodSetup.Invoke(script, ["Here I am!!!"]); //, "too many args"]);
 
                 for (int i = 0; i < 10; i++)
                 { 
@@ -59,7 +59,10 @@ namespace NScript.Example
             }
             catch (Exception ex)
             {
-                compiler.HandleRuntimeException(ex);/////// isn't really part of compiler??
+                Console.WriteLine($"Script runtime failed:");
+                engine.Reports.Clear();
+                engine.ProcessRuntimeException(ex);
+                engine.Reports.ForEach(rep => Console.WriteLine($"{rep}"));
                 return 2;
             }
 
@@ -67,8 +70,8 @@ namespace NScript.Example
         }
     }
 
-    /// <summary>The accompanying compiler.</summary>
-    class GameCompiler : CompilerCore
+    /// <summary>The accompanying processor.</summary>
+    class GameEngine : Engine
     {
         #region Compiler override options - see base class for doc
         protected override void PreCompile()
@@ -105,7 +108,12 @@ namespace NScript.Example
         static void Main(string[] _)
         {
             var app = new Example();
-            Environment.Exit(app.Run());
+            var ret = app.Run();
+            if (ret > 0)
+            {
+                Console.WriteLine($"App failed with {ret}");
+            }
+            Environment.Exit(ret);
         }
     }
 }

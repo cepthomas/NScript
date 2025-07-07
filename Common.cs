@@ -5,9 +5,9 @@ using System.Text;
 using System.IO;
 using System.Reflection;
 using System.Diagnostics;
-using Microsoft.CodeAnalysis;
-using Microsoft.CodeAnalysis.CSharp;
-using Microsoft.CodeAnalysis.Emit;
+//using Microsoft.CodeAnalysis;
+//using Microsoft.CodeAnalysis.CSharp;
+//using Microsoft.CodeAnalysis.Emit;
 using Ephemera.NBagOfTricks;
 using System.Threading.Tasks;
 
@@ -90,8 +90,5 @@ namespace NScript
     }
 
     /// <summary>Reporting hard errors.</summary>
-    public class ScriptException(Report report) : Exception()
-    {
-        public Report Report { get; init; } = report;
-    }
+    public class ScriptException() : Exception() { }
 }

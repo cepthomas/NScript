@@ -21,7 +21,9 @@ namespace NScript.Example
         TextWriter? writeStream;
         #endregion
  
-        #region Properties - dynamic things shared between host and script at runtime TODO1? should be Globals not static
+        #region Properties - dynamic things shared between host and script at runtime
+        // Probably should be proper globals.
+        
         /// <summary>All the players. Key is name.</summary>
         public static Dictionary<string, Role> Players { get; } = [];
 
