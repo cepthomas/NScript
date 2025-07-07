@@ -1,7 +1,9 @@
 
 // Preprocesser directives
-#:include Utils.csx
+#:include Utils.csxx
 #:kustom cheeseburger
+#:dir_no_arg
+
 
 public class Game999 : GameScriptBase
 {

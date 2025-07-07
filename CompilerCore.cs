@@ -122,7 +122,7 @@ namespace NScript
 
                 // Process the source files into something that can be compiled.
                 ScriptFile pcont = new(scriptFn);
-                PreprocessFile(pcont); // recursive function
+                bool valid = PreprocessFile(pcont); // recursive function
 
                 // Compile the processed files.
                 Compile(dir!);
@@ -370,9 +370,9 @@ namespace NScript
         {
             bool valid = File.Exists(pcont.SourceFileName);
 
-            if (valid)
+            if (valid) // TODO1 clean up logic
             {
-                pcont.GeneratedFileName = $"{Path.GetFileName(pcont.SourceFileName)}_generated.cs".ToLower();
+                pcont.GeneratedFileName = $"{Path.GetFileNameWithoutExtension(pcont.SourceFileName)}_generated.cs";
                 // pcont.GeneratedFileName = $"{_scriptName}_src{_scriptFiles.Count}.cs".ToLower();
                 _scriptFiles.Add(pcont);
 
@@ -382,7 +382,7 @@ namespace NScript
                 // The content.
                 List<string> sourceLines = [.. File.ReadAllLines(pcont.SourceFileName)];
 
-                for (int sourceLineNumber = 0; sourceLineNumber < sourceLines.Count; sourceLineNumber++)
+                for (int sourceLineNumber = 0; sourceLineNumber < sourceLines.Count && valid; sourceLineNumber++)
                 {
                     string s = sourceLines[sourceLineNumber];
 
@@ -406,7 +406,7 @@ namespace NScript
                         {
                             int dpos = strim.IndexOf(' ');
                             var directive = dpos == -1 ? strim : strim.Left(dpos);
-                            var dirval = dpos == -1 ? "" : strim.Right(dpos + 1);
+                            var dirval = dpos == -1 ? "" : strim.Right(strim.Length - dpos - 1);
 
                             // Handle include now.
                             if (directive == "include")
@@ -439,7 +439,7 @@ namespace NScript
 
                         if (!valid)
                         {
-                            ReportSyntax(ReportLevel.Error, $"Invalid directive: {strim}", pcont.SourceFileName, sourceLineNumber);
+                            ReportSyntax(ReportLevel.Error, $"Invalid directive: {strim}", pcont.SourceFileName, sourceLineNumber + 1);
                         }
                     }
                     else if (PreprocessLine(strim, pcont))

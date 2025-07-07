@@ -14,6 +14,7 @@ namespace NScript.Example
         /// Run script compiler using example file.
         /// This demonstrates how a host application loads and runs scripts.
         /// </summary>
+        /// <returns>TODO1</returns>
         public int Run()
         {
             ///// Compile script with application options.
