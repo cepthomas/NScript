@@ -12,6 +12,7 @@ using Microsoft.CodeAnalysis.Emit;
 using Microsoft.CodeAnalysis.Text;
 using Ephemera.NBagOfTricks;
 
+// TODOX ? Roslyn warmiup like https://github.com/RickStrahl/Westwind.Scripting/blob/master/Westwind.Scripting/RoslynLifetimeManager.cs
 
 namespace NScript
 {
@@ -279,14 +280,13 @@ namespace NScript
             using var pdbs = new MemoryStream();
 
             var copts = new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary);
-            var compilation = CSharpCompilation.Create($"{_scriptName}", trees, references, copts);
-
             var emitOptions = new EmitOptions().
                 WithDebugInformationFormat(DebugInformationFormat.PortablePdb).
                 WithDefaultSourceFileEncoding(encoding);
+            var compilation = CSharpCompilation.Create($"{_scriptName}", trees, references, copts);
 
             var result = compilation.Emit(peStream: ms, pdbStream: pdbs, options: emitOptions);
-            //var result = compilation.Emit("output.exe", "output.pdb");
+            // TODOX does this apply? https://carljohansen.wordpress.com/2020/05/09/compiling-expression-trees-with-roslyn-without-memory-leaks-2/
 
             if (result.Success)
             {
@@ -507,35 +507,5 @@ namespace NScript
             return resType == ReportLevel.Warning && IgnoreWarnings ? ReportLevel.None : resType;
         }
         #endregion
-
-        ///// <summary> TODOX something like this?
-        ///// Run a script execution asynchronously in the background to warm up Roslyn.
-        ///// Call this during application startup or anytime before you run the first
-        ///// script to ensure scripts execute quickly.
-        /////
-        ///// Although this method returns `Task` so it can be tested for success, in applications
-        ///// you typically will call this without `await` on the result task and just let it operate
-        ///// in the background.
-        ///// 
-        ///// Borrowed from https://github.com/RickStrahl/Westwind.Scripting/blob/master/Westwind.Scripting/RoslynLifetimeManager.cs
-        ///// </summary>
-        //public static Task<bool> WarmupRoslyn()
-        //{
-        //    // warm up Roslyn in the background
-        //    return Task.Run(() =>
-        //    {
-        //        var script = new CSharpScriptExecution();
-        //        script.AddDefaultReferencesAndNamespaces();
-        //        var result = script.ExecuteCode("int x = 1; return x;", null);
-
-        //        return result is 1;
-        //    });
-        //}
-
-        // TODOX? https://carljohansen.wordpress.com/2020/05/09/compiling-expression-trees-with-roslyn-without-memory-leaks-2/
-        // In researching the problem I saw hints of a potential solution in a new feature of .NET Core 3 called 
-        // “collectible AssemblyLoadContexts”.  AssemblyLoadContext has been around for a long time, but 
-        // collectible ALCs, with an Unload method, are new.
-        // > SearchFilterCompiler.cs
     }
 }

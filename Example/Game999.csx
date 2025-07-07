@@ -1,5 +1,8 @@
 
 // Preprocesser directives
+// Tools can add new tokens following the #: convention.
+// https://learn.microsoft.com/en-us/dotnet/csharp/language-reference/preprocessor-directives
+
 #:include Utils.csx
 #:kustom cheeseburger
 #:dir_no_arg

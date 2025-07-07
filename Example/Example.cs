@@ -43,6 +43,12 @@ namespace NScript.Example
                 var script = engine.CompiledScript;
                 var scriptType = script.GetType();
 
+                // This uses basic method.Invoke(...). The record suggests significant performance improvement
+                // using method.CreateDelegate<T>. However it's not the easiest tech to use. .NET 7 introduced
+                // a behind the scenes delegate generation and caching which should improve this significantly,
+                // except for the first invocation of course. Not tested.
+                // https://devblogs.microsoft.com/dotnet/performance_improvements_in_net_7/#reflection
+
                 // Cache methods.
                 var methodInit = scriptType.GetMethod("Init");
                 var methodSetup = scriptType.GetMethod("Setup");

@@ -10,36 +10,18 @@ No dependencies on external components.
 
 
 
-C:\DEV\LIBS\NSCRIPT
+C:\Dev\Libs\NScript
+|   NScript.sln
+|   NScript.csproj
 |   Common.cs
 |   Engine.cs
-|   NScript.csproj
-|   NScript.sln
-|   README.md
 +---Example
-|   |   Example.cs
-|   |   Example.csproj
-|   |   Game999.csx
-|   |   GameScriptBase.cs
-|   |   Utils.csx
-+---lib
-|       Ephemera.NBagOfTricks.dll
-|       Ephemera.NBagOfTricks.xml
+|       Example.csproj
+|       Example.cs
+|       GameScriptBase.cs
+|       Game999.csx
+|       Utils.csx
+\---lib
+        Ephemera.NBagOfTricks.dll
 
 
-
-Tools can add new tokens following the #: convention.
-https://learn.microsoft.com/en-us/dotnet/csharp/language-reference/preprocessor-directives
-
-
-
-https://www.michalkomorowski.com/2016/10/roslyn-how-to-create-custom-debuggable_27.html
-
-
-// TODOX improve on invoke?
-//https://devblogs.microsoft.com/dotnet/performance_improvements_in_net_7/#reflection
-// Supposedly delegate is created under the cover so we don't have to write it.
-//If you know at compile - time the signature of the target method use MethodInfo.CreateDelegate
-//https://learn.microsoft.com/dotnet/api/system.reflection.methodinfo.createdelegate
-> var methodInit = scriptType.GetMethod("Init");
-> methodInit.Invoke(script, [Console.Out]);
