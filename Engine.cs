@@ -14,7 +14,7 @@ using Ephemera.NBagOfTricks;
 
 // TODOX ? Roslyn warmiup like https://github.com/RickStrahl/Westwind.Scripting/blob/master/Westwind.Scripting/RoslynLifetimeManager.cs
 
-namespace NScript
+namespace Ephemera.NScript
 {
     /// <summary>Parses/compiles script file(s).</summary>
     public class Engine
@@ -327,7 +327,7 @@ namespace NScript
 
                     if (srcLineNum == -1) // something in user api or compiler, probably
                     {
-                        DoReport(ReportType.Syntax, level, $"{msg} => {sf.GeneratedCode[lineNum - 1]}", sf.SourceFileName, srcLineNum);
+                        DoReport(ReportType.Syntax, level, $"{msg} => {sf.GeneratedCode[lineNum]}", sf.SourceFileName, srcLineNum);
                     }
                     else // regular user error
                     {

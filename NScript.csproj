@@ -12,8 +12,8 @@
         <!-- <AllowUnsafeBlocks>true</AllowUnsafeBlocks> -->
         <Description>C# script compiler</Description>
         <Copyright>MIT License</Copyright>
-        <RootNamespace>NScript</RootNamespace>
-        <AssemblyName>NScript</AssemblyName>
+        <RootNamespace>Ephemera.NScript</RootNamespace>
+        <AssemblyName>Ephemera.NScript</AssemblyName>
         <!-- <DefineConstants>DEBUG;TRACE</DefineConstants> -->
         <NoWarn>CS1591</NoWarn>
         <Nullable>enable</Nullable>

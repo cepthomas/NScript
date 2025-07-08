@@ -5,14 +5,11 @@ using System.Text;
 using System.IO;
 using System.Reflection;
 using System.Diagnostics;
-//using Microsoft.CodeAnalysis;
-//using Microsoft.CodeAnalysis.CSharp;
-//using Microsoft.CodeAnalysis.Emit;
-using Ephemera.NBagOfTricks;
 using System.Threading.Tasks;
+using Ephemera.NBagOfTricks;
 
 
-namespace NScript
+namespace Ephemera.NScript
 {
     public enum ReportType
     {

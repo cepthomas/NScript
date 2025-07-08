@@ -5,7 +5,7 @@
 
 #:include Utils.csx
 #:kustom cheeseburger
-#:dir_no_arg
+#:directive_no_arg
 
 
 public class Game999 : GameScriptBase

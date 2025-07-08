@@ -6,7 +6,7 @@ using System.Reflection;
 using Ephemera.NBagOfTricks;
 
 
-namespace NScript.Example
+namespace Ephemera.NScript.Example
 {
     class Example
     {
@@ -83,7 +83,7 @@ namespace NScript.Example
         protected override void PreCompile()
         {
             // Add other references.
-            LocalDlls = ["NScript"];
+            LocalDlls = ["Ephemera.NScript"];
             Usings.Add("NScript.Example");
         }
 
