@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Reflection;
+using System.Threading.Tasks;
 using Ephemera.NBagOfTricks;
 
 
@@ -79,7 +80,8 @@ namespace Ephemera.NScript.Example
     /// <summary>The accompanying processor.</summary>
     class GameEngine : Engine
     {
-        #region Compiler override options - see base class for doc
+        #region Compiler override options
+        /// <see cref="Engine"/>
         protected override void PreCompile()
         {
             // Add other references.
@@ -87,6 +89,7 @@ namespace Ephemera.NScript.Example
             Usings.Add("NScript.Example");
         }
 
+        /// <see cref="Engine"/>
         protected override void PostCompile()
         {
             if (Directives.TryGetValue("kustom", out string? value))
@@ -95,7 +98,8 @@ namespace Ephemera.NScript.Example
             }
         }
 
-        protected override bool PreprocessLine(string sline, ScriptFile pcont)
+        /// <see cref="Engine"/>
+        protected override bool PreprocessLine(string sline, int lineNum, ScriptFile pcont)
         {
             // Check for my specials.
             if (sline.Trim() == "JUNK")
@@ -108,11 +112,13 @@ namespace Ephemera.NScript.Example
         #endregion
     }
 
-    /// <summary>Start here.</summary>
+    /// <summary>Start here. TODO1 slow startup?</summary>
     internal class Program
     {
         static void Main(string[] _)
         {
+            //await Engine.WarmupRoslyn();
+
             var app = new Example();
             var ret = app.Run();
             if (ret > 0)

@@ -12,7 +12,7 @@ using Microsoft.CodeAnalysis.Emit;
 using Microsoft.CodeAnalysis.Text;
 using Ephemera.NBagOfTricks;
 
-// TODOX ? Roslyn warmiup like https://github.com/RickStrahl/Westwind.Scripting/blob/master/Westwind.Scripting/RoslynLifetimeManager.cs
+// TODOX does this apply? https://carljohansen.wordpress.com/2020/05/09/compiling-expression-trees-with-roslyn-without-memory-leaks-2/
 
 namespace Ephemera.NScript
 {
@@ -85,8 +85,9 @@ namespace Ephemera.NScript
         /// <summary>Called for each line in the source file before compiling.</summary>
         /// <param name="sline">Trimmed line</param>
         /// <param name="pcont">File context</param>
+        /// <param name="lineNum">Source line number may be useful (1-based)</param>
         /// <returns>True if derived class took care of this</returns>
-        protected virtual bool PreprocessLine(string sline, ScriptFile pcont) { return false; }
+        protected virtual bool PreprocessLine(string sline, int lineNum, ScriptFile pcont) { return false; }
         #endregion
 
         #region Public functions
@@ -109,6 +110,7 @@ namespace Ephemera.NScript
                 _baseName = baseName;
                 _plainFiles.AddRange(sourceFns);
 
+                // Derived class hook.
                 PreCompile();
 
                 // Get and sanitize the script name.
@@ -125,8 +127,9 @@ namespace Ephemera.NScript
                 // Compile the processed files.
                 Compile(dir!);
 
-                DoReport(ReportType.Internal, ReportLevel.Info, $"Compiled script: {(DateTime.Now - startTime).Milliseconds} msec.");
+                AddReport(ReportType.Internal, ReportLevel.Info, $"Compiled script: {(DateTime.Now - startTime).Milliseconds} msec.");
 
+                // Derived class hook.
                 PostCompile();
             }
             catch (ScriptException)
@@ -137,10 +140,53 @@ namespace Ephemera.NScript
             catch (Exception ex)
             {
                 // Something else not detected in normal operation. Also dead.
-                DoReport(ReportType.Internal, ReportLevel.Error, $"CompileScript other exception: {ex}.");
+                AddReport(ReportType.Internal, ReportLevel.Error, $"CompileScript other exception: {ex}.");
                 CompiledScript = null;
             }
         }
+
+        /// <summary>
+        /// Run the compiler on a simple text block.
+        /// </summary>
+        /// <param name="text">Text to compile.</param>
+        public void CompileText(string text)
+        {
+            DateTime startTime = DateTime.Now;
+
+            // Build a syntax tree.
+            CSharpParseOptions popts = new();
+            SyntaxTree tree = CSharpSyntaxTree.ParseText(text, popts);
+
+            // References needed to compile the code.
+            var references = new List<MetadataReference>();
+            var dotnetStore = Path.GetDirectoryName(typeof(object).Assembly.Location);
+            SystemDlls.ForEach(dll => references.Add(MetadataReference.CreateFromFile(Path.Combine(dotnetStore!, dll + ".dll"))));
+
+            // Emit to stream.
+            using var ms = new MemoryStream();
+            var copts = new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary);
+            var compilation = CSharpCompilation.Create($"SimpleText.dll", [tree], references, copts);
+            EmitResult result = compilation.Emit(ms);
+
+            if (result.Success)
+            {
+                // Load into currently running assembly.
+                var assy = Assembly.Load(ms.ToArray());
+                var types = assy.GetTypes();
+                AddReport(ReportType.Internal, ReportLevel.Info, $"Compiled text: {(DateTime.Now - startTime).Milliseconds} msec.");
+            }
+            else
+            {
+                // Collect results.
+                foreach (var diag in result.Diagnostics)
+                {
+                    //var msg = diag.GetMessage();
+                    var lineNum = diag.Location.GetLineSpan().StartLinePosition.Line + 1;
+                    AddReport(ReportType.Internal, Translate(diag.Severity), $"Compiled text failed: {diag.GetMessage()}");
+                }
+            }
+        }
+
 
         /// <summary>Handle script runtime exceptions.</summary>
         /// <param name="ex">The exception to examine.</param>
@@ -168,20 +214,20 @@ namespace Ephemera.NScript
 
                         if (srcLineNum == -1) // something in user api or compiler, probably
                         {
-                            DoReport(ReportType.Runtime, ReportLevel.Error, $"{msg} => {sf.GeneratedCode[lineNum - 1]}", sf.SourceFileName, srcLineNum);
+                            AddReport(ReportType.Runtime, ReportLevel.Error, $"{msg} => {sf.GeneratedCode[lineNum - 1]}", sf.SourceFileName, srcLineNum);
                         }
                         else // regular user error
                         {
-                            DoReport(ReportType.Runtime, ReportLevel.Error, msg, sf.SourceFileName, srcLineNum);
+                            AddReport(ReportType.Runtime, ReportLevel.Error, msg, sf.SourceFileName, srcLineNum);
                         }
                     }
                     else if (_plainFiles.Contains(fileName))
                     {
-                        DoReport(ReportType.Runtime, ReportLevel.Error, msg, fileName, lineNum);
+                        AddReport(ReportType.Runtime, ReportLevel.Error, msg, fileName, lineNum);
                     }
                     else // probably user app
                     {
-                        DoReport(ReportType.Runtime, ReportLevel.Error, msg, fileName, lineNum);
+                        AddReport(ReportType.Runtime, ReportLevel.Error, msg, fileName, lineNum);
                     }
                     break;
                 }
@@ -189,14 +235,14 @@ namespace Ephemera.NScript
         }
         #endregion
 
-        #region Derrived class functions
+        #region Protected functions
         /// <summary>Log script errors.</summary>
         /// <param name="type"></param>
         /// <param name="level"></param>
         /// <param name="msg"></param>
         /// <param name="scriptFile"></param>
         /// <param name="lineNum"></param>
-        protected void DoReport(ReportType type, ReportLevel level, string msg, string? scriptFile = null, int? lineNum = null)
+        protected void AddReport(ReportType type, ReportLevel level, string msg, string? scriptFile = null, int? lineNum = null)
         {
             if (level != ReportLevel.None)
             {
@@ -219,7 +265,7 @@ namespace Ephemera.NScript
         #endregion
 
         #region Private functions
-        /// <summary>The actual compiler driver.</summary>
+        /// <summary>The actual script compiler worker.</summary>
         /// <param name="baseDir">Fully qualified path to main file.</param>
         void Compile(string baseDir)
         {
@@ -260,7 +306,7 @@ namespace Ephemera.NScript
                 trees.Add(tree);
             }
 
-            // Build up a list of references needed to compile the code.
+            // References needed to compile the code.
             var references = new List<MetadataReference>();
 
             // System stuff location.
@@ -286,7 +332,6 @@ namespace Ephemera.NScript
             var compilation = CSharpCompilation.Create($"{_scriptName}", trees, references, copts);
 
             var result = compilation.Emit(peStream: ms, pdbStream: pdbs, options: emitOptions);
-            // TODOX does this apply? https://carljohansen.wordpress.com/2020/05/09/compiling-expression-trees-with-roslyn-without-memory-leaks-2/
 
             if (result.Success)
             {
@@ -305,7 +350,7 @@ namespace Ephemera.NScript
 
                 if (CompiledScript is null)
                 {
-                    DoReport(ReportType.Internal, ReportLevel.Error, $"Couldn't activate script {_scriptName}.");
+                    AddReport(ReportType.Internal, ReportLevel.Error, $"Couldn't activate script {_scriptName}.");
                     throw new ScriptException();
                 }
             }
@@ -327,20 +372,20 @@ namespace Ephemera.NScript
 
                     if (srcLineNum == -1) // something in user api or compiler, probably
                     {
-                        DoReport(ReportType.Syntax, level, $"{msg} => {sf.GeneratedCode[lineNum]}", sf.SourceFileName, srcLineNum);
+                        AddReport(ReportType.Syntax, level, $"{msg} => {sf.GeneratedCode[lineNum]}", sf.SourceFileName, srcLineNum);
                     }
                     else // regular user error
                     {
-                        DoReport(ReportType.Syntax, level, msg, sf.SourceFileName, srcLineNum);
+                        AddReport(ReportType.Syntax, level, msg, sf.SourceFileName, srcLineNum);
                     }
                 }
                 else if (_plainFiles.Contains(fileName))
                 {
-                    DoReport(ReportType.Syntax, level, msg, fileName, lineNum + 1);
+                    AddReport(ReportType.Syntax, level, msg, fileName, lineNum + 1);
                 }
                 else // other error?
                 {
-                    DoReport(ReportType.Internal, ReportLevel.Error, msg, fileName, lineNum + 1);
+                    AddReport(ReportType.Internal, ReportLevel.Error, msg, fileName, lineNum + 1);
                 }
 
                 if (level == ReportLevel.Error) { throw new ScriptException(); }
@@ -423,11 +468,11 @@ namespace Ephemera.NScript
 
                         if (!valid)
                         {
-                            DoReport(ReportType.Syntax, ReportLevel.Error, $"Invalid directive: {strim}", pcont.SourceFileName, sourceLineNumber + 1);
+                            AddReport(ReportType.Syntax, ReportLevel.Error, $"Invalid directive: {strim}", pcont.SourceFileName, sourceLineNumber + 1);
                             throw new ScriptException();
                         }
                     }
-                    else if (PreprocessLine(strim, pcont))
+                    else if (PreprocessLine(strim, sourceLineNumber + 1, pcont))
                     {
                        // handled = NOP
                     }
@@ -505,6 +550,31 @@ namespace Ephemera.NScript
             };
 
             return resType == ReportLevel.Warning && IgnoreWarnings ? ReportLevel.None : resType;
+        }
+
+        /// <summary>
+        /// Roslyn warmup.
+        /// From https://github.com/RickStrahl/Westwind.Scripting/blob/master/Westwind.Scripting/RoslynLifetimeManager.cs
+        /// </summary>
+        /// <returns></returns>
+        public static Task WarmupRoslyn()
+        {
+            string code = @"
+            using System;
+            namespace WarmupRoslyn
+            {
+                public class Klass
+                {
+                    public void Go () { }
+                }
+            }";
+
+            // warm up Roslyn in the background
+            return Task.Run(() =>
+            {
+                Engine engine = new();
+                engine.CompileText(code);
+            });
         }
         #endregion
     }
