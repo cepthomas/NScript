@@ -1,4 +1,4 @@
-# NScript
+# NScript  TODOX
 A script engine primarily for embedding in .NET apps.
 
 Compiles C#-like scripts into in-memory assemblies. Primarily for use by [Nebulator](https://github.com/cepthomas/Nebulator/blob/main/README.md)
@@ -18,7 +18,7 @@ C:\Dev\Libs\NScript
 +---Example
 |       Example.csproj
 |       Example.cs
-|       ScriptBase.cs
+|       ScriptBase.cs - also gets compiled in even though not necessary TODOX better way to handle?
 |       Game999.csx
 |       Utils.csx
 \---lib

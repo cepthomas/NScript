@@ -18,10 +18,12 @@ namespace Ephemera.NScript.Example
         /// <returns>Exit code: 0=ok 1=compiler or syntax error 2=runtime error</returns>
         public int Run()
         {
+            Program.tm.Snap("20");
+
             ///// Compile script with application options.
             GameEngine engine = new()
             {
-                ScriptPath = MiscUtils.GetSourcePath(),
+                ScriptPath = ".", //MiscUtils.GetSourcePath(),
                 IgnoreWarnings = true //false,
             };
 
@@ -36,6 +38,8 @@ namespace Ephemera.NScript.Example
                 engine.Reports.ForEach(rep => Console.WriteLine($"{rep}"));
                 return 1;
             }
+
+            Program.tm.Snap("30");
 
             ///// Execute script. Needs exception handling to protect from user runtime script errors.
             try
@@ -55,6 +59,8 @@ namespace Ephemera.NScript.Example
                 var methodSetup = scriptType.GetMethod("Setup");
                 var methodMove = scriptType.GetMethod("Move");
 
+                Program.tm.Snap("40");
+
                 // Run the game.
                 methodInit.Invoke(script, [Console.Out]);
                 methodSetup.Invoke(script, ["Here I am!!!"]); //, "too many args"]);
@@ -73,6 +79,8 @@ namespace Ephemera.NScript.Example
                 return 2;
             }
 
+            Program.tm.Snap("50");
+
             return 0;
         }
     }
@@ -85,8 +93,8 @@ namespace Ephemera.NScript.Example
         protected override void PreCompile()
         {
             // Add other references.
-            LocalDlls = ["Ephemera.NScript"];
-            Usings.Add("NScript.Example");
+            LocalDlls = ["Ephemera.NScript"]; // the engine
+            Usings.Add("NScript.Example.Script"); // script core
         }
 
         /// <see cref="Engine"/>
@@ -112,11 +120,13 @@ namespace Ephemera.NScript.Example
         #endregion
     }
 
-    /// <summary>Start here. TODO1 slow startup?</summary>
+    /// <summary>Start here. TODOX slow startup?</summary>
     internal class Program
     {
+        public static TimeIt tm = new();
         static void Main(string[] _)
         {
+            tm.Snap("10");
             //await Engine.WarmupRoslyn();
 
             var app = new Example();
@@ -125,6 +135,10 @@ namespace Ephemera.NScript.Example
             {
                 Console.WriteLine($"App failed with {ret}");
             }
+
+            tm.Snap("100");
+            tm.Captures.ForEach(t => Console.WriteLine(t));
+
             Environment.Exit(ret);
         }
     }
