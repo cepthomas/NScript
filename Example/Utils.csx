@@ -1,6 +1,6 @@
 
 // An included file with app utility functions.
-public class Utils : GameScriptBase
+public class Utils : ScriptBase
 {
     int notavar = 911;
 

@@ -18,7 +18,7 @@ C:\Dev\Libs\NScript
 +---Example
 |       Example.csproj
 |       Example.cs
-|       GameScriptBase.cs
+|       ScriptBase.cs
 |       Game999.csx
 |       Utils.csx
 \---lib

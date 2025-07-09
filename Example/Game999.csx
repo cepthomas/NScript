@@ -8,7 +8,7 @@
 #:directive_no_arg
 
 
-public class Game999 : GameScriptBase
+public class Game999 : ScriptBase
 {
     Utils u = new();
 

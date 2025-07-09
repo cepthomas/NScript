@@ -9,20 +9,23 @@ using System.IO;
 
 namespace NScript.Example
 {
-    /// <summary>Player roles.</summary>
-    public enum Role { Oligarch, Sycophant, Hero, Peon }
-
-    public class GameScriptBase
+    public class ScriptBase
     {
+        #region Types
+        /// <summary>Player roles.</summary>
+        public enum Role { Oligarch, Sycophant, Hero, Peon }
+        #endregion
+
         #region Fields
         /// <summary>Roll the dice.</summary>
         readonly Random rand = new();
 
+        /// <summary>Host supplied output.</summary>
         TextWriter? writeStream;
         #endregion
  
-        #region Properties - dynamic things shared between host and script at runtime
-        // Probably should be proper globals.
+        #region Properties - accessible by host and script
+        // TODOX Statics probably should be proper globals.
         
         /// <summary>All the players. Key is name.</summary>
         public static Dictionary<string, Role> Players { get; } = [];
@@ -37,28 +40,27 @@ namespace NScript.Example
         public static double RealTime { get; set; } = 0.0;
         #endregion
 
-        #region Internal functions
+        #region Public functions - called by host
+        /// <summary>Internal script initialization.</summary>
         public void Init(TextWriter stream)
         {
             writeStream = stream;
         }
-        #endregion
 
-        #region Host application calls game functions
-        /// <summary>Initialization.</summary>
+        /// <summary>Required script function.</summary>
         public virtual int Setup(string info)
         {
             throw new NotImplementedException();
         }
 
-        /// <summary>Do something.</summary>
+        /// <summary>Required script function.</summary>
         public virtual int Move()
         {
             throw new NotImplementedException();
         }
         #endregion
 
-        #region Common game functions
+        #region Game functions - called by script
         /// <summary>Make me a player.</summary>
         protected void CreatePlayer(Role role, string name)
         {

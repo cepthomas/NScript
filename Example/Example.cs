@@ -26,9 +26,9 @@ namespace Ephemera.NScript.Example
             };
 
             var scriptFile = Path.Combine(engine.ScriptPath, "Game999.csx");
-            var baseFile = Path.Combine(engine.ScriptPath, "GameScriptBase.cs");
+            var baseFile = Path.Combine(engine.ScriptPath, "ScriptBase.cs");
 
-            engine.CompileScript(scriptFile, "GameScriptBase", [baseFile]);
+            engine.CompileScript(scriptFile, "ScriptBase", [baseFile]);
 
             if (engine.CompiledScript is null)
             {

@@ -23,8 +23,11 @@ namespace Ephemera.NScript
         /// <summary>Client option.</summary>
         public bool IgnoreWarnings { get; set; } = false;
 
-        /// <summary>Client may need to tell us this for Include path.</summary>
-        public string ScriptPath { get; set; } = "";
+        /// <summary>Client may need to tell us this for include path.</summary>
+        public string? ScriptPath { get; set; }
+
+        /// <summary>Client may need to tell us this for temp files.</summary>
+        public string? TempDir { get; set; }
 
         /// <summary>Default system dlls. Client can add or subtract.</summary>
         public List<string> SystemDlls { get; } =
@@ -272,7 +275,7 @@ namespace Ephemera.NScript
             CompiledScript = null;
 
             // Create temp output area and/or clean it.
-            var tempDir = Path.Combine(baseDir, "temp");
+            var tempDir = TempDir ?? Path.Combine(baseDir, "temp");
             Directory.CreateDirectory(tempDir);
             Directory.GetFiles(tempDir).ForEach(f => File.Delete(f));
 
@@ -351,7 +354,7 @@ namespace Ephemera.NScript
                 if (CompiledScript is null)
                 {
                     AddReport(ReportType.Internal, ReportLevel.Error, $"Couldn't activate script {_scriptName}.");
-                    throw new ScriptException();
+                    throw new ScriptException(); // fatal
                 }
             }
 
@@ -388,7 +391,10 @@ namespace Ephemera.NScript
                     AddReport(ReportType.Internal, ReportLevel.Error, msg, fileName, lineNum + 1);
                 }
 
-                if (level == ReportLevel.Error) { throw new ScriptException(); }
+                if (level == ReportLevel.Error)
+                {
+                    throw new ScriptException(); // fatal
+                }
             }
         }
 
@@ -435,41 +441,41 @@ namespace Ephemera.NScript
                         {
                             int dpos = strim.IndexOf(' ');
                             var directive = dpos == -1 ? strim : strim.Left(dpos);
-                            var dirval = dpos == -1 ? "" : strim.Right(strim.Length - dpos - 1);
+                            var dval = dpos == -1 ? "" : strim.Right(strim.Length - dpos - 1);
 
                             // Handle include now.
                             if (directive == "include")
                             {
                                 // Check for file existence.
-                                if (!File.Exists(dirval))
+                                if (!File.Exists(dval))
                                 {
-                                    if (ScriptPath != "")
+                                    if (ScriptPath is not null)
                                     {
-                                        dirval = Path.Combine(ScriptPath, dirval);
+                                        dval = Path.Combine(ScriptPath, dval);
                                     }
                                 }
-                                if (!File.Exists(dirval))
+                                if (!File.Exists(dval))
                                 {
                                     valid = false;
                                 }
                                 else
                                 {
                                     // Recursive call to parse this file
-                                    ScriptFile subcont = new(dirval);
+                                    ScriptFile subcont = new(dval);
                                     valid = PreprocessFile(subcont);
                                 }
                             }
                             else
                             {
                                 // Just add to global collection.
-                                Directives[directive] = dirval;
+                                Directives[directive] = dval;
                             }
                         }
 
                         if (!valid)
                         {
                             AddReport(ReportType.Syntax, ReportLevel.Error, $"Invalid directive: {strim}", pcont.SourceFileName, sourceLineNumber + 1);
-                            throw new ScriptException();
+                            throw new ScriptException(); // fatal
                         }
                     }
                     else if (PreprocessLine(strim, sourceLineNumber + 1, pcont))
