@@ -143,7 +143,7 @@ namespace Example
         /// <see cref="Engine"/>
         protected override bool PreprocessLine(string sline, int lineNum, ScriptFile pcont)
         {
-            // Check for my specials.
+            // Check for any specials.
             if (sline.Trim() == "JUNK")
             {
                 // Could do something useful with this.

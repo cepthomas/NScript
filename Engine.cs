@@ -341,20 +341,6 @@ namespace Ephemera.NScript
                 var assy = Assembly.Load(ms.ToArray(), pdbs.ToArray());
                 var types = assy.GetTypes();
 
-
-
-
-                //   // Instantiate
-                //   dynamic instance = assembly.CreateInstance("__ScriptExecution.__Executor");
-                //   The result will be an object reference, and the easiest way to use it is by using dynamic.
-                //   // Call
-                //   var json = await instance.GetJsonFromAlbumViewer(37);
-
-                dynamic instance = assy.CreateInstance("UserScript.Game999");
-                //instance.Setup("fff");
-
-
-
                 foreach (Type t in types)
                 {
                     if (t is not null && t.Name == _scriptName)
