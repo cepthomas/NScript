@@ -5,16 +5,48 @@ using System.IO;
 using System.Reflection;
 using System.Threading.Tasks;
 using Ephemera.NBagOfTricks;
+using Ephemera.NScript;
 
 
-namespace Ephemera.NScript.Example
+// faster reflection:
+// https://steven-giesel.com/blogPost/05ecdd16-8dc4-490f-b1cf-780c994346a4
+// https://sergiopedri.medium.com/optimizing-reflection-with-dynamic-code-generation-6e15cef4b1a2
+
+
+// namespace __ScriptExecution {
+// public class __Executor { 
+//     public async Task<string> GetJsonFromAlbumViewer(int id)
+//     {
+
+// Loading and Executing
+// Once you've figured out which dependencies to add and how, the rest of the compilation process is pretty easy.
+// The result is an assembly that gets written to a stream which you can use to load the assembly:
+//   assembly = Assembly.Load(((MemoryStream)codeStream).ToArray());
+// To load the compiled type you can then use Reflection:
+//   // Instantiate
+//   dynamic instance = assembly.CreateInstance("__ScriptExecution.__Executor");
+//   The result will be an object reference, and the easiest way to use it is by using dynamic.
+//   // Call
+//   var json = await instance.GetJsonFromAlbumViewer(37);
+// There are other ways you can use this type of course:
+//     Reflection
+//     Typed Interfaces that are shared between host app and compiled code
+
+//Define the interfaces that outline the contract between the host and the plugins in a separate class library project.
+//The host application can dynamically load assemblies containing the compiled code (plugins) at runtime using mechanisms
+//  like Assembly.LoadFrom().
+//Reflection can then be used to identify types within the loaded assembly that implement the shared interface(s).
+//Instances of these plugin types can be created using Activator.CreateInstance(), allowing the host application to
+//  interact with the plugin through the shared interface contract.
+
+
+
+
+namespace Example
 {
     class Example
     {
-        /// <summary>
-        /// Run script compiler using example file.
-        /// This demonstrates how a host application loads and runs scripts.
-        /// </summary>
+        /// <summary>This demonstrates how a host application loads and runs scripts.</summary>
         /// <returns>Exit code: 0=ok 1=compiler or syntax error 2=runtime error</returns>
         public int Run()
         {
@@ -24,13 +56,15 @@ namespace Ephemera.NScript.Example
             GameEngine engine = new()
             {
                 ScriptPath = ".", //MiscUtils.GetSourcePath(),
-                IgnoreWarnings = true //false,
+                IgnoreWarnings = true, //false,
+                Namespace = "Example.Script" // same as ScriptBase.cs
             };
 
             var scriptFile = Path.Combine(engine.ScriptPath, "Game999.csx");
             var baseFile = Path.Combine(engine.ScriptPath, "ScriptBase.cs");
 
-            engine.CompileScript(scriptFile, "ScriptBase", [baseFile]);
+            // Namespace should be the same as ScriptBase.cs.
+            engine.CompileScript(scriptFile, [baseFile]);
 
             if (engine.CompiledScript is null)
             {
@@ -94,7 +128,7 @@ namespace Ephemera.NScript.Example
         {
             // Add other references.
             LocalDlls = ["Ephemera.NScript"]; // the engine
-            Usings.Add("NScript.Example.Script"); // script core
+            Usings.Add("Example.Script"); // script core Example.Script
         }
 
         /// <see cref="Engine"/>

@@ -7,7 +7,7 @@ using System.IO;
 
 #nullable enable
 
-namespace NScript.Example.Script
+namespace Example.Script
 {
     public class ScriptBase
     {

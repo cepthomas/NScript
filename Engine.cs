@@ -23,8 +23,11 @@ namespace Ephemera.NScript
         /// <summary>Client option.</summary>
         public bool IgnoreWarnings { get; set; } = false;
 
-        /// <summary>Client may need to tell us this for include path.</summary>
+        /// <summary>Client may need to tell us this for #:include directive.</summary>
         public string? ScriptPath { get; set; }
+
+        /// <summary>Script namespace.</summary>
+        public required string Namespace { get; set; }
 
         /// <summary>Client may need to tell us this for temp files.</summary>
         public string? TempDir { get; set; }
@@ -68,10 +71,7 @@ namespace Ephemera.NScript
         /// <summary>Script info.</summary>
         string _scriptName = "???";
 
-        /// <summary>Script base/api.</summary>
-        string _baseName = "???";
-
-        /// <summary>Products of file preprocess.</summary>
+        /// <summary>Products of preprocess.</summary>
         readonly List<ScriptFile> _scriptFiles = [];
 
         /// <summary>Other files to compile.</summary>
@@ -96,9 +96,8 @@ namespace Ephemera.NScript
         #region Public functions
         /// <summary>Run the compiler on a script file.</summary>
         /// <param name="scriptFn">Path to main script file.</param>
-        /// <param name="baseName">Base class name.</param>
         /// <param name="sourceFns">Source code files.</param>
-        public void CompileScript(string scriptFn, string baseName, List<string> sourceFns)
+        public void CompileScript(string scriptFn, List<string> sourceFns)
         {
             // Reset everything.
             CompiledScript = null;
@@ -110,7 +109,6 @@ namespace Ephemera.NScript
             {
                 DateTime startTime = DateTime.Now;
 
-                _baseName = baseName;
                 _plainFiles.AddRange(sourceFns);
 
                 // Derived class hook.
@@ -189,7 +187,6 @@ namespace Ephemera.NScript
                 }
             }
         }
-
 
         /// <summary>Handle script runtime exceptions.</summary>
         /// <param name="ex">The exception to examine.</param>
@@ -320,6 +317,8 @@ namespace Ephemera.NScript
 
             // System dlls.
             SystemDlls.ForEach(dll => references.Add(MetadataReference.CreateFromFile(Path.Combine(dotnetStore!, dll + ".dll"))));
+            // TODOX had to add this for Enum per https://github.com/dotnet/roslyn/issues/50612
+            references.Add(MetadataReference.CreateFromFile(Assembly.Load("netstandard").Location));
 
             // Local dlls.
             LocalDlls.ForEach(dll => references.Add(MetadataReference.CreateFromFile(Path.Combine(localStore!, dll + ".dll"))));
@@ -341,6 +340,20 @@ namespace Ephemera.NScript
                 // Load into currently running assembly and locate the new script.
                 var assy = Assembly.Load(ms.ToArray(), pdbs.ToArray());
                 var types = assy.GetTypes();
+
+
+
+
+                //   // Instantiate
+                //   dynamic instance = assembly.CreateInstance("__ScriptExecution.__Executor");
+                //   The result will be an object reference, and the easiest way to use it is by using dynamic.
+                //   // Call
+                //   var json = await instance.GetJsonFromAlbumViewer(37);
+
+                dynamic instance = assy.CreateInstance("UserScript.Game999");
+                //instance.Setup("fff");
+
+
 
                 foreach (Type t in types)
                 {
@@ -522,7 +535,7 @@ namespace Ephemera.NScript
             codeLines.AddRange(
             [
                 "",
-                "namespace UserScript",
+                $"namespace {Namespace}",
                 "{",
             ]);
 
@@ -558,30 +571,30 @@ namespace Ephemera.NScript
             return resType == ReportLevel.Warning && IgnoreWarnings ? ReportLevel.None : resType;
         }
 
-        /// <summary>
-        /// Roslyn warmup.
-        /// From https://github.com/RickStrahl/Westwind.Scripting/blob/master/Westwind.Scripting/RoslynLifetimeManager.cs
-        /// </summary>
-        /// <returns></returns>
-        public static Task WarmupRoslyn()
-        {
-            string code = @"
-            using System;
-            namespace WarmupRoslyn
-            {
-                public class Klass
-                {
-                    public void Go () { }
-                }
-            }";
+        ///// <summary>
+        ///// Roslyn warmup. TODOX
+        ///// From https://github.com/RickStrahl/Westwind.Scripting/blob/master/Westwind.Scripting/RoslynLifetimeManager.cs
+        ///// </summary>
+        ///// <returns></returns>
+        //public static Task WarmupRoslyn()
+        //{
+        //    string code = @"
+        //    using System;
+        //    namespace WarmupRoslyn
+        //    {
+        //        public class Klass
+        //        {
+        //            public void Go () { }
+        //        }
+        //    }";
 
-            // warm up Roslyn in the background
-            return Task.Run(() =>
-            {
-                Engine engine = new();
-                engine.CompileText(code);
-            });
-        }
+        //    // warm up Roslyn in the background
+        //    return Task.Run(() =>
+        //    {
+        //        Engine engine = new();
+        //        engine.CompileText(code);
+        //    });
+        //}
         #endregion
     }
 }
