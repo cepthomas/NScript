@@ -8,40 +8,6 @@ using Ephemera.NBagOfTricks;
 using Ephemera.NScript;
 
 
-// faster reflection:
-// https://steven-giesel.com/blogPost/05ecdd16-8dc4-490f-b1cf-780c994346a4
-// https://sergiopedri.medium.com/optimizing-reflection-with-dynamic-code-generation-6e15cef4b1a2
-
-
-// namespace __ScriptExecution {
-// public class __Executor { 
-//     public async Task<string> GetJsonFromAlbumViewer(int id)
-//     {
-
-// Loading and Executing
-// Once you've figured out which dependencies to add and how, the rest of the compilation process is pretty easy.
-// The result is an assembly that gets written to a stream which you can use to load the assembly:
-//   assembly = Assembly.Load(((MemoryStream)codeStream).ToArray());
-// To load the compiled type you can then use Reflection:
-//   // Instantiate
-//   dynamic instance = assembly.CreateInstance("__ScriptExecution.__Executor");
-//   The result will be an object reference, and the easiest way to use it is by using dynamic.
-//   // Call
-//   var json = await instance.GetJsonFromAlbumViewer(37);
-// There are other ways you can use this type of course:
-//     Reflection
-//     Typed Interfaces that are shared between host app and compiled code
-
-//Define the interfaces that outline the contract between the host and the plugins in a separate class library project.
-//The host application can dynamically load assemblies containing the compiled code (plugins) at runtime using mechanisms
-//  like Assembly.LoadFrom().
-//Reflection can then be used to identify types within the loaded assembly that implement the shared interface(s).
-//Instances of these plugin types can be created using Activator.CreateInstance(), allowing the host application to
-//  interact with the plugin through the shared interface contract.
-
-
-
-
 namespace Example
 {
     class Example
@@ -50,8 +16,6 @@ namespace Example
         /// <returns>Exit code: 0=ok 1=compiler or syntax error 2=runtime error</returns>
         public int Run()
         {
-            Program.tm.Snap("20");
-
             ///// Compile script with application options.
             GameEngine engine = new()
             {
@@ -73,8 +37,6 @@ namespace Example
                 return 1;
             }
 
-            Program.tm.Snap("30");
-
             ///// Execute script. Needs exception handling to protect from user runtime script errors.
             try
             {
@@ -82,27 +44,23 @@ namespace Example
                 var script = engine.CompiledScript;
                 var scriptType = script.GetType();
 
-                // This uses basic method.Invoke(...). The record suggests significant performance improvement
-                // using method.CreateDelegate<T>. However it's not the easiest tech to use. .NET 7 introduced
-                // a behind the scenes delegate generation and caching which should improve this significantly,
-                // except for the first invocation of course. Not tested.
-                // https://devblogs.microsoft.com/dotnet/performance_improvements_in_net_7/#reflection
-
-                // Cache methods.
+                // Cache accessors.
                 var methodInit = scriptType.GetMethod("Init");
                 var methodSetup = scriptType.GetMethod("Setup");
                 var methodMove = scriptType.GetMethod("Move");
-
-                Program.tm.Snap("40");
+                var propTime = scriptType.GetProperty("RealTime");
 
                 // Run the game.
                 methodInit.Invoke(script, [Console.Out]);
-                methodSetup.Invoke(script, ["Here I am!!!"]); //, "too many args"]);
+                methodSetup.Invoke(script, ["Here I am!!!", 60, 80]);
+                propTime.SetValue(script, 100.00);
 
                 for (int i = 0; i < 10; i++)
-                { 
-                    methodMove.Invoke(script, []);  
+                {
+                    methodMove.Invoke(script, []);
                 }
+
+                var ntime = propTime.GetValue(script);
             }
             catch (Exception ex)
             {
@@ -112,8 +70,6 @@ namespace Example
                 engine.Reports.ForEach(rep => Console.WriteLine($"{rep}"));
                 return 2;
             }
-
-            Program.tm.Snap("50");
 
             return 0;
         }
@@ -157,10 +113,8 @@ namespace Example
     /// <summary>Start here. TODOX slow startup?</summary>
     internal class Program
     {
-        public static TimeIt tm = new();
         static void Main(string[] _)
         {
-            tm.Snap("10");
             //await Engine.WarmupRoslyn();
 
             var app = new Example();
@@ -169,9 +123,6 @@ namespace Example
             {
                 Console.WriteLine($"App failed with {ret}");
             }
-
-            tm.Snap("100");
-            tm.Captures.ForEach(t => Console.WriteLine(t));
 
             Environment.Exit(ret);
         }

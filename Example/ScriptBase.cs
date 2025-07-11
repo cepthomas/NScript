@@ -18,37 +18,35 @@ namespace Example.Script
 
         #region Fields
         /// <summary>Roll the dice.</summary>
-        readonly Random rand = new();
+        readonly Random _rand = new();
 
         /// <summary>Host supplied output.</summary>
-        TextWriter? writeStream;
-        #endregion
- 
-        #region Properties - accessible by host and script
-        // TODOX Statics probably should be proper globals.
-        
+        TextWriter? _writeStream;
+
         /// <summary>All the players. Key is name.</summary>
-        public static Dictionary<string, Role> Players { get; } = [];
+        protected Dictionary<string, Role> _players { get; } = [];
 
         /// <summary>Board size.</summary>
-        public static int WorldX { get; set; } = 50;
+        protected int _worldX = 50;
 
         /// <summary>Board size.</summary>
-        public static int WorldY { get; set; } = 50;
+        protected int _worldY = 50;
+        #endregion
 
-        /// <summary>Main -> Script</summary>
-        public static double RealTime { get; set; } = 0.0;
+        #region Properties - accessible by host and script
+        /// <summary>A property.</summary>
+        public double RealTime { get; set; } = 0.0;
         #endregion
 
         #region Public functions - called by host
         /// <summary>Internal script initialization.</summary>
         public void Init(TextWriter stream)
         {
-            writeStream = stream;
+            _writeStream = stream;
         }
 
         /// <summary>Required script function.</summary>
-        public virtual int Setup(string info)
+        public virtual int Setup(string info, int worldX, int worldY)
         {
             throw new NotImplementedException();
         }
@@ -64,31 +62,31 @@ namespace Example.Script
         /// <summary>Make me a player.</summary>
         protected void CreatePlayer(Role role, string name)
         {
-            Print($"CreatePlayer({role}, {name}) {Players.Count}");
-            Players.Add(name, role);
+            Print($"CreatePlayer({role}, {name}) {_players.Count}");
+            _players.Add(name, role);
         }
 
         /// <summary>Roll the dice.</summary>
         protected string RandomPlayer()
         {
-            if (Players.Count > 0)
+            if (_players.Count > 0)
             {
-                int i = rand.Next(0, Players.Count);
+                int i = _rand.Next(0, _players.Count);
                 //i = 99;
-                var player = Players.ToList()[i];
+                var player = _players.ToList()[i];
                 Print($"RandomPlayer: {player.Key}");
                 return player.Key;
             }
             else
             {
-                return "All players dead!";
+                return "";
             }
         }
 
         /// <summary>Tell the user something.</summary>
         protected void Print(string msg)
         {
-            writeStream?.WriteLine(msg);
+            _writeStream?.WriteLine($"SCR: {msg}");
         }
         #endregion
     }

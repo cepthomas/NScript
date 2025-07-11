@@ -1,7 +1,5 @@
 
 // Preprocesser directives
-// Tools can add new tokens following the #: convention.
-// https://learn.microsoft.com/en-us/dotnet/csharp/language-reference/preprocessor-directives
 
 #:include Utils.csx
 #:kustom cheeseburger
@@ -15,12 +13,9 @@ public class Game999 : ScriptBase
     JUNK
 
     // Required overrides.
-    public override int Setup(string info)
+    public override int Setup(string info, int worldX, int worldY)
     {
         Print($"Setup(): {info}");
-
-        WorldX = 100;
-        WorldY = 50;
 
         CreatePlayer(Role.Oligarch, "Vladimir");
         CreatePlayer(Role.Sycophant, "Donald");
@@ -29,7 +24,7 @@ public class Game999 : ScriptBase
         CreatePlayer(Role.Peon, "Bob Also");
         CreatePlayer(Role.Peon, "Yet Another Bob");
 
-        bool b = u.Boing(0); // 60
+        bool b = u.Boing(0);
 
         return 0;
     }    
@@ -38,15 +33,22 @@ public class Game999 : ScriptBase
     {
         Print($"Move()");
 
+        RealTime += 1;
+
         var player = RandomPlayer();
-        if (Players.ContainsKey(player))
+
+        if (player == "")
         {
-            Print($"Player killed: {player} {Players[player]}");
-            Players.Remove(player);
+            Print($"No players left");
+        }
+        else if (_players.ContainsKey(player))
+        {
+            Print($"Player killed: {player}:{_players[player]}");
+            _players.Remove(player);
         }
         else
         {
-            Print($"Player already gone:{player}");
+            Print($"This should never happen: {player}");
         }
 
         return 0;

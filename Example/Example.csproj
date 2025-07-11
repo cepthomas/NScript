@@ -30,6 +30,10 @@
     </ItemGroup>
 
     <ItemGroup>
+      <Compile Remove="ScriptApi.cs" />
+    </ItemGroup>
+
+    <ItemGroup>
         <ProjectReference Include="..\NScript.csproj" />
     </ItemGroup>
 

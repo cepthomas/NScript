@@ -343,6 +343,7 @@ namespace Ephemera.NScript
 
                 foreach (Type t in types)
                 {
+                    AddReport(ReportType.Internal, ReportLevel.Info, $"Type {t.Name}.");
                     if (t is not null && t.Name == _scriptName)
                     {
                         // We have a good script file. Create the executable object.
