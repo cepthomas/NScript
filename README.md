@@ -19,7 +19,7 @@ C:\Dev\Libs\NScript
 |   NScript.sln
 |   NScript.csproj
 |   Common.cs
-|   Engine.cs
+|   CompilerCore.cs
 +---Example
 |       Example.csproj
 |       Example.cs

@@ -96,7 +96,7 @@ namespace Ephemera.NScript
         /// From https://github.com/RickStrahl/Westwind.Scripting/blob/master/Westwind.Scripting/RoslynLifetimeManager.cs
         /// </summary>
         /// <returns></returns>
-        public static Task WarmupRoslyn() // TODOX runtime stuff
+        public static Task WarmupRoslyn()
         {
             string code = @"
             using System;

@@ -49,19 +49,18 @@ namespace Example
                 var miSetup = scriptType.GetMethod("Setup");
                 var miMove = scriptType.GetMethod("Move");
                 var piTime = scriptType.GetProperty("RealTime");
-                // delegate flavor
-                //var delMove = (Func<int>)Delegate.CreateDelegate(typeof(Func<int>), script, miMove);
+                // var delMove = (Func<int>)Delegate.CreateDelegate(typeof(Func<int>), script, miMove);
 
                 // Run the game.
-                miInit.Invoke(script, [Console.Out]);
-                miSetup.Invoke(script, ["Here I am!!!", 60, 80]);
-                piTime.SetValue(script, 100.0);
+                miInit!.Invoke(script, [Console.Out]);
+                miSetup!.Invoke(script, ["Here I am!!!", 60, 80]);
+                piTime!.SetValue(script, 100.0);
 
                 for (int i = 0; i < 10; i++)
                 {
-                    miMove.Invoke(script, []);
-                    //delMove();
+                    miMove!.Invoke(script, []);
                 }
+
                 // Examine effects.
                 var ntime = piTime.GetValue(script);
             }
@@ -102,22 +101,19 @@ namespace Example
 
             var assy = compiler.CompileText(code);
             object? inst = null;
-            Type? type = null;
+            Type? type = assy!.GetType("DontCare.Klass");
+            inst = Activator.CreateInstance(type!);
 
-            foreach (Type t in assy.GetTypes())
-            {
-                if (t is not null && t.Name == "Klass")
-                {
-                    type = t;
-                }
-            }
-            inst = Activator.CreateInstance(type);
-
-            // Automate/generate these?
-            // try: UnsafeAccessor  [MemoryDiagnoser]/[Benchmark]  in bench.cs
-            var miDev = type.GetMethod("Dev");
+            // Methods
+            var miDev = type!.GetMethod("Dev");
             var piTime = type.GetProperty("RealTime");
-            var delDev = (Func<string, int>)Delegate.CreateDelegate(typeof(Func<string, int>), inst, miDev);
+            var miTimeGet = piTime!.GetGetMethod();
+            var miTimeSet = piTime.GetSetMethod();
+
+            // Delegates
+            var delDev = (Func<string, int>)Delegate.CreateDelegate(typeof(Func<string, int>), inst, miDev!);
+            var delTimeGet = (Func<double>)Delegate.CreateDelegate(typeof(Func<double>), inst, miTimeGet!);
+            var delTimeSet = (Action<double>)Delegate.CreateDelegate(typeof(Action<double>), inst, miTimeSet!);
 
             List<long> invoked = [];
             List<long> delegated = [];
@@ -125,21 +121,24 @@ namespace Example
 
             for (int i = 0; i < 10; i++)
             {
-                var start = Stopwatch.GetTimestamp();
-                miDev.Invoke(inst, ["xxx"]);
-                invoked.Add(Stopwatch.GetTimestamp() - start);
+                var start1 = Stopwatch.GetTimestamp();
+                miDev!.Invoke(inst, ["xxx"]);
+                invoked.Add(Stopwatch.GetTimestamp() - start1);
 
-                start = Stopwatch.GetTimestamp();
+                var start2 = Stopwatch.GetTimestamp();
                 delDev("xxx");
-                delegated.Add(Stopwatch.GetTimestamp() - start);
+                delegated.Add(Stopwatch.GetTimestamp() - start2);
 
-                start = Stopwatch.GetTimestamp();
-                piTime.GetValue(inst);
-                prop.Add(Stopwatch.GetTimestamp() - start);
+                var start3 = Stopwatch.GetTimestamp();
+                //piTime.GetValue(inst);
+                delTimeGet();
+                prop.Add(Stopwatch.GetTimestamp() - start3);
+
+                //System.Threading.Thread.Sleep(50);
             }
 
             // Examine effects.
-            // properties: using the results of the GetGetMethod and GetSetMethod methods of PropertyInfo.
+            // property delegates: using the results of the GetGetMethod and GetSetMethod methods of PropertyInfo.
             var ntime = piTime.GetValue(inst);
 
             for (int i = 0; i < invoked.Count; i++)
