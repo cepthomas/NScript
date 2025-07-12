@@ -89,4 +89,31 @@ namespace Ephemera.NScript
 
     /// <summary>Reporting hard errors.</summary>
     public class ScriptException() : Exception() { }
+
+    public class Utils
+    {
+        /// <summary>
+        /// From https://github.com/RickStrahl/Westwind.Scripting/blob/master/Westwind.Scripting/RoslynLifetimeManager.cs
+        /// </summary>
+        /// <returns></returns>
+        public static Task WarmupRoslyn() // TODOX runtime stuff
+        {
+            string code = @"
+            using System;
+            namespace WarmupRoslyn
+            {
+               public class Klass
+               {
+                   public void Go () { }
+               }
+            }";
+
+            // Warm up Roslyn in the background
+            return Task.Run(() =>
+            {
+                CompilerCore compiler = new() { Namespace = "WarmupRoslyn" };
+                compiler.CompileText(code);
+            });
+        }
+    }
 }

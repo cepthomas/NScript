@@ -17,23 +17,23 @@ namespace Example
         public int Run()
         {
             ///// Compile script with application options.
-            GameEngine engine = new()
+            GameCompiler compiler = new()
             {
-                ScriptPath = ".", //MiscUtils.GetSourcePath(),
-                IgnoreWarnings = true, //false,
+                ScriptPath = ".",
+                IgnoreWarnings = true,
                 Namespace = "Example.Script" // same as ScriptBase.cs
             };
 
-            var scriptFile = Path.Combine(engine.ScriptPath, "Game999.csx");
-            var baseFile = Path.Combine(engine.ScriptPath, "ScriptBase.cs");
+            var scriptFile = Path.Combine(compiler.ScriptPath, "Game999.csx");
+            var baseFile = Path.Combine(compiler.ScriptPath, "ScriptBase.cs");
 
             // Namespace should be the same as ScriptBase.cs.
-            engine.CompileScript(scriptFile, [baseFile]);
+            compiler.CompileScript(scriptFile, [baseFile]);
 
-            if (engine.CompiledScript is null)
+            if (compiler.CompiledScript is null)
             {
                 Console.WriteLine($"Compile failed:");
-                engine.Reports.ForEach(rep => Console.WriteLine($"{rep}"));
+                compiler.Reports.ForEach(rep => Console.WriteLine($"{rep}"));
                 return 1;
             }
 
@@ -41,53 +41,127 @@ namespace Example
             try
             {
                 // Init script.
-                var script = engine.CompiledScript;
+                var script = compiler.CompiledScript;
                 var scriptType = script.GetType();
 
                 // Cache accessors.
-                var methodInit = scriptType.GetMethod("Init");
-                var methodSetup = scriptType.GetMethod("Setup");
-                var methodMove = scriptType.GetMethod("Move");
-                var propTime = scriptType.GetProperty("RealTime");
+                var miInit = scriptType.GetMethod("Init");
+                var miSetup = scriptType.GetMethod("Setup");
+                var miMove = scriptType.GetMethod("Move");
+                var piTime = scriptType.GetProperty("RealTime");
+                // delegate flavor
+                //var delMove = (Func<int>)Delegate.CreateDelegate(typeof(Func<int>), script, miMove);
 
                 // Run the game.
-                methodInit.Invoke(script, [Console.Out]);
-                methodSetup.Invoke(script, ["Here I am!!!", 60, 80]);
-                propTime.SetValue(script, 100.00);
+                miInit.Invoke(script, [Console.Out]);
+                miSetup.Invoke(script, ["Here I am!!!", 60, 80]);
+                piTime.SetValue(script, 100.0);
 
                 for (int i = 0; i < 10; i++)
                 {
-                    methodMove.Invoke(script, []);
+                    miMove.Invoke(script, []);
+                    //delMove();
                 }
-
-                var ntime = propTime.GetValue(script);
+                // Examine effects.
+                var ntime = piTime.GetValue(script);
             }
             catch (Exception ex)
             {
                 Console.WriteLine($"Script runtime failed:");
-                engine.Reports.Clear();
-                engine.ProcessRuntimeException(ex);
-                engine.Reports.ForEach(rep => Console.WriteLine($"{rep}"));
+                compiler.Reports.Clear();
+                compiler.ProcessRuntimeException(ex);
+                compiler.Reports.ForEach(rep => Console.WriteLine($"{rep}"));
                 return 2;
             }
 
             return 0;
         }
+
+        /// <summary>Like Run() but used to investigate reflection options.</summary>
+        /// <returns></returns>
+        public void Probe()
+        {
+            ///// Compile script with application options.
+            GameCompiler compiler = new()
+            {
+                ScriptPath = ".",
+                IgnoreWarnings = true,
+                Namespace = "DontCare"
+            };
+
+            string code = @"
+            using System;
+            namespace DontCare
+            {
+                public class Klass
+                {
+                    public double RealTime { get; set; } = 123.45;
+                    public int Dev(string s) { RealTime += 1.0; return s.Length; }
+                }
+            }";
+
+            var assy = compiler.CompileText(code);
+            object? inst = null;
+            Type? type = null;
+
+            foreach (Type t in assy.GetTypes())
+            {
+                if (t is not null && t.Name == "Klass")
+                {
+                    type = t;
+                }
+            }
+            inst = Activator.CreateInstance(type);
+
+            // Automate/generate these?
+            // try: UnsafeAccessor  [MemoryDiagnoser]/[Benchmark]  in bench.cs
+            var miDev = type.GetMethod("Dev");
+            var piTime = type.GetProperty("RealTime");
+            var delDev = (Func<string, int>)Delegate.CreateDelegate(typeof(Func<string, int>), inst, miDev);
+
+            List<long> invoked = [];
+            List<long> delegated = [];
+            List<long> prop = [];
+
+            for (int i = 0; i < 10; i++)
+            {
+                var start = Stopwatch.GetTimestamp();
+                miDev.Invoke(inst, ["xxx"]);
+                invoked.Add(Stopwatch.GetTimestamp() - start);
+
+                start = Stopwatch.GetTimestamp();
+                delDev("xxx");
+                delegated.Add(Stopwatch.GetTimestamp() - start);
+
+                start = Stopwatch.GetTimestamp();
+                piTime.GetValue(inst);
+                prop.Add(Stopwatch.GetTimestamp() - start);
+            }
+
+            // Examine effects.
+            // properties: using the results of the GetGetMethod and GetSetMethod methods of PropertyInfo.
+            var ntime = piTime.GetValue(inst);
+
+            for (int i = 0; i < invoked.Count; i++)
+            {
+                Console.WriteLine($"iter{i} invoked:{invoked[i]} delegated:{delegated[i]} prop:{prop[i]}");
+            }
+        }
     }
 
     /// <summary>The accompanying processor.</summary>
-    class GameEngine : Engine
+    class GameCompiler : CompilerCore
     {
         #region Compiler override options
-        /// <see cref="Engine"/>
+        /// <see cref="CompilerCore"/>
         protected override void PreCompile()
         {
             // Add other references.
-            LocalDlls = ["Ephemera.NScript"]; // the engine
+            LocalDlls = ["Ephemera.NScript"]; // the compiler
             Usings.Add("Example.Script"); // script core Example.Script
         }
 
-        /// <see cref="Engine"/>
+        /// <see cref="CompilerCore"/>
         protected override void PostCompile()
         {
             if (Directives.TryGetValue("kustom", out string? value))
@@ -96,7 +170,7 @@ namespace Example
             }
         }
 
-        /// <see cref="Engine"/>
+        /// <see cref="CompilerCore"/>
         protected override bool PreprocessLine(string sline, int lineNum, ScriptFile pcont)
         {
             // Check for any specials.
@@ -110,14 +184,15 @@ namespace Example
         #endregion
     }
 
-    /// <summary>Start here. TODOX slow startup?</summary>
+    /// <summary>Start here.</summary>
     internal class Program
     {
-        static void Main(string[] _)
+        static void Main()
         {
-            //await Engine.WarmupRoslyn();
+            _ = Utils.WarmupRoslyn();
 
             var app = new Example();
+            app.Probe(); return;
             var ret = app.Run();
             if (ret > 0)
             {

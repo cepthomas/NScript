@@ -30,6 +30,7 @@
     </ItemGroup>
 
     <ItemGroup>
+      <Compile Remove="bench.cs" />
       <Compile Remove="ScriptApi.cs" />
     </ItemGroup>
 

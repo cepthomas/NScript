@@ -33,7 +33,7 @@ namespace Example.Script
         protected int _worldY = 50;
         #endregion
 
-        #region Properties - accessible by host and script
+        #region Properties accessible - by host and script
         /// <summary>A property.</summary>
         public double RealTime { get; set; } = 0.0;
         #endregion
@@ -53,6 +53,12 @@ namespace Example.Script
 
         /// <summary>Required script function.</summary>
         public virtual int Move()
+        {
+            throw new NotImplementedException();
+        }
+
+        /// <summary>Optional dev function.</summary>
+        public virtual int Dev(string s)
         {
             throw new NotImplementedException();
         }

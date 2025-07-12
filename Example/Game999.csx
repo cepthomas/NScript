@@ -27,7 +27,7 @@ public class Game999 : ScriptBase
         bool b = u.Boing(0);
 
         return 0;
-    }    
+    }
 
     public override int Move()
     {
@@ -53,5 +53,9 @@ public class Game999 : ScriptBase
 
         return 0;
     }
+
+    public override int Dev(string s)
+    {
+        return s.Length;
+    }
 }
-    
