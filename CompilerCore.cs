@@ -71,6 +71,9 @@ namespace Ephemera.NScript
         /// <summary>Script info.</summary>
         string _scriptName = "???";
 
+        /// <summary>Base class.</summary>
+        string _baseName = "???";
+
         /// <summary>Products of preprocess.</summary>
         readonly List<ScriptFile> _scriptFiles = [];
 
@@ -96,8 +99,9 @@ namespace Ephemera.NScript
         #region Public functions
         /// <summary>Run the compiler on a script file.</summary>
         /// <param name="scriptFn">Path to main script file.</param>
-        /// <param name="sourceFns">Source code files.</param>
-        public void CompileScript(string scriptFn, List<string> sourceFns)
+        /// <param name="baseName">Base class name.</param>
+        /// <param name="sourceFns">S code files.</param>
+        public void CompileScript(string scriptFn, string baseName, List<string> sourceFns)
         {
             // Reset everything.
             CompiledScript = null;
@@ -108,7 +112,7 @@ namespace Ephemera.NScript
             try
             {
                 DateTime startTime = DateTime.Now;
-
+                _baseName = baseName;
                 _plainFiles.AddRange(sourceFns);
 
                 // Derived class hook.
@@ -122,7 +126,7 @@ namespace Ephemera.NScript
                 var dir = Path.GetDirectoryName(scriptFn);
 
                 // Process the source files into something that can be compiled.
-                ScriptFile pcont = new(scriptFn);
+                ScriptFile pcont = new(scriptFn) { TopLevel = true } ;
                 bool valid = PreprocessFile(pcont); // recursive function
 
                 // Compile the processed files.
@@ -416,7 +420,7 @@ namespace Ephemera.NScript
                 _scriptFiles.Add(pcont);
 
                 // Preamble.
-                pcont.GeneratedCode.AddRange(GenTopOfFile(pcont.SourceFileName));
+                pcont.GeneratedCode.AddRange(GenTopOfFile(pcont));
 
                 // The content.
                 List<string> sourceLines = [.. File.ReadAllLines(pcont.SourceFileName)];
@@ -492,7 +496,7 @@ namespace Ephemera.NScript
                         {
                             // Store the whole line.
                             pcont.LineNumberMap[pcont.GeneratedCode.Count] = sourceLineNumber + 1;
-                            pcont.GeneratedCode.Add($"    {cline}");
+                            pcont.GeneratedCode.Add($"        {cline}");
                         }
                     }
                 }
@@ -507,13 +511,20 @@ namespace Ephemera.NScript
         /// <summary>
         /// Create the boilerplate file top stuff.
         /// </summary>
-        /// <param name="fn">Source file name. Empty means it's an internal file.</param>
+        /// <param name="pcont">Source file info.</param>
         /// <returns></returns>
-        List<string> GenTopOfFile(string fn)
+        List<string> GenTopOfFile(ScriptFile pcont)
         {
-            string origin = fn == "" ? "internal" : fn;
+            string fn = pcont.SourceFileName;
+            string origin = fn == "" ? "internal" : fn; // .\Game999.csx
+            string className = Path.GetFileNameWithoutExtension(origin);
+
+            string baseClass = pcont.TopLevel ? $" : {_baseName}" : "";
 
             // Create the common contents.
+            //public class Game999 : ScriptBase
+            //public class Utils : ScriptBase
+
             List<string> codeLines =
             [
                 $"// Created from {origin} {DateTime.Now}",
@@ -525,9 +536,11 @@ namespace Ephemera.NScript
 
             codeLines.AddRange(
             [
-                "",
+                 "",
                 $"namespace {Namespace}",
-                "{",
+                 "{",
+                $"    public class {className}{baseClass}",
+                 "    {",
             ]);
 
             return codeLines;
@@ -540,7 +553,11 @@ namespace Ephemera.NScript
         List<string> GenBottomOfFile()
         {
             // Create the common contents.
-            List<string> codeLines = ["}"];
+            List<string> codeLines =
+            [
+                "    }",
+                "}"
+            ];
 
             return codeLines;
         }

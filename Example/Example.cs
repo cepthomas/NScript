@@ -28,7 +28,7 @@ namespace Example
             var baseFile = Path.Combine(compiler.ScriptPath, "ScriptBase.cs");
 
             // Namespace should be the same as ScriptBase.cs.
-            compiler.CompileScript(scriptFile, [baseFile]);
+            compiler.CompileScript(scriptFile, "ScriptBase", [baseFile]);
 
             if (compiler.CompiledScript is null)
             {

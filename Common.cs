@@ -76,6 +76,9 @@ namespace Ephemera.NScript
         /// <summary>key is GeneratedCode line number aka index, value is Source line number.</summary>
         public Dictionary<int, int> LineNumberMap { get; set; } = [];
 
+        /// <summary>This is a top-level (not included) file.</summary>
+        public bool TopLevel { get; set; } = false;
+
         /// <summary>Get caller source line number from generatted file line.</summary>
         /// <param name="lineNum"></param>
         /// <returns></returns>

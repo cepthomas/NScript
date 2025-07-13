@@ -1,21 +1,18 @@
 
 // An included file with app utility functions.
-public class Utils : ScriptBase
+//public class Utils : ScriptBase
+
+int notavar = 911;
+
+public bool Boing(int which = 0)
 {
-    int notavar = 911;
+    bool boinged = true;
 
-    public bool Boing(int which = 0)
+    if (which == 0)
     {
-        bool boinged = true;
-
-        if (which == 0)
-        {
-            which = 555;
-            boinged = true;
-        }
-
-        Print($"Boinged {RandomPlayer()}");
-
-        return boinged;
+        which = 555;
+        boinged = true;
     }
+
+    return boinged;
 }
