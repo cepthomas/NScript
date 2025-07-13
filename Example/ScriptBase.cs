@@ -24,7 +24,7 @@ namespace Example.Script
         TextWriter? _writeStream;
 
         /// <summary>All the players. Key is name.</summary>
-        protected Dictionary<string, Role> _players { get; } = [];
+        protected Dictionary<string, Role> _players = [];
 
         /// <summary>Board size.</summary>
         protected int _worldX = 50;
@@ -33,16 +33,17 @@ namespace Example.Script
         protected int _worldY = 50;
         #endregion
 
-        #region Properties accessible - by host and script
-        /// <summary>A property.</summary>
+        #region Properties - accessible by host and script
+        /// <summary>When are we.</summary>
         public double RealTime { get; set; } = 0.0;
         #endregion
 
         #region Public functions - called by host
         /// <summary>Internal script initialization.</summary>
-        public void Init(TextWriter stream)
+        public int Init(TextWriter stream)
         {
             _writeStream = stream;
+            return 0;
         }
 
         /// <summary>Required script function.</summary>
@@ -56,19 +57,13 @@ namespace Example.Script
         {
             throw new NotImplementedException();
         }
-
-        /// <summary>Optional dev function.</summary>
-        public virtual int Dev(string s)
-        {
-            throw new NotImplementedException();
-        }
         #endregion
 
         #region Game functions - called by script
         /// <summary>Make me a player.</summary>
         protected void CreatePlayer(Role role, string name)
         {
-            Print($"CreatePlayer({role}, {name}) {_players.Count}");
+            Print($"CreatePlayer({role}, {name}) -> _players[{_players.Count}]");
             _players.Add(name, role);
         }
 
@@ -78,7 +73,6 @@ namespace Example.Script
             if (_players.Count > 0)
             {
                 int i = _rand.Next(0, _players.Count);
-                //i = 99;
                 var player = _players.ToList()[i];
                 Print($"RandomPlayer: {player.Key}");
                 return player.Key;

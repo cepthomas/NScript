@@ -41,28 +41,39 @@ namespace Example
             try
             {
                 // Init script.
-                var script = compiler.CompiledScript;
-                var scriptType = script.GetType();
+                var inst = compiler.CompiledScript;
+                var type = inst.GetType();
 
-                // Cache accessors.
-                var miInit = scriptType.GetMethod("Init");
-                var miSetup = scriptType.GetMethod("Setup");
-                var miMove = scriptType.GetMethod("Move");
-                var piTime = scriptType.GetProperty("RealTime");
-                // var delMove = (Func<int>)Delegate.CreateDelegate(typeof(Func<int>), script, miMove);
+                // Reflection methods.
+                var miInit = type.GetMethod("Init");
+                var miSetup = type.GetMethod("Setup");
+                var miMove = type.GetMethod("Move");
+                var piTime = type.GetProperty("RealTime");
+
+                // Delegates.
+                var Init = (Func<TextWriter, int>)Delegate.CreateDelegate(typeof(Func<TextWriter, int>), inst, type.GetMethod("Init")!);
+                var Setup = (Func<string, int, int, int>)Delegate.CreateDelegate(typeof(Func<string, int, int, int>), inst, type.GetMethod("Setup")!);
+                var Move = (Func<int>)Delegate.CreateDelegate(typeof(Func<int>), inst, type.GetMethod("Move")!);
+                var SetRealTime = (Action<double>)Delegate.CreateDelegate(typeof(Action<double>), inst, type.GetProperty("RealTime")!.GetSetMethod()!);
+                var GetRealTime = (Func<double>)Delegate.CreateDelegate(typeof(Func<double>), inst, type.GetProperty("RealTime")!.GetGetMethod()!);
 
                 // Run the game.
-                miInit!.Invoke(script, [Console.Out]);
-                miSetup!.Invoke(script, ["Here I am!!!", 60, 80]);
-                piTime!.SetValue(script, 100.0);
+                Init(Console.Out);
+                Setup("Here I am!!!", 60, 80);
+                SetRealTime(500);
+                // Using invoke:
+                //miInit!.Invoke(inst, [Console.Out]);
+                //miSetup!.Invoke(inst, ["Here I am!!!", 60, 80]);
+                //piTime!.SetValue(inst, 100.0);
 
                 for (int i = 0; i < 10; i++)
                 {
-                    miMove!.Invoke(script, []);
+                    Move();
                 }
 
                 // Examine effects.
-                var ntime = piTime.GetValue(script);
+                var ntime = GetRealTime();
+                Console.WriteLine($"Finished at {ntime}");
             }
             catch (Exception ex)
             {
@@ -74,77 +85,6 @@ namespace Example
             }
 
             return 0;
-        }
-
-        /// <summary>Like Run() but used to investigate reflection options.</summary>
-        /// <returns></returns>
-        public void Probe()
-        {
-            ///// Compile script with application options.
-            GameCompiler compiler = new()
-            {
-                ScriptPath = ".",
-                IgnoreWarnings = true,
-                Namespace = "DontCare"
-            };
-
-            string code = @"
-            using System;
-            namespace DontCare
-            {
-                public class Klass
-                {
-                    public double RealTime { get; set; } = 123.45;
-                    public int Dev(string s) { RealTime += 1.0; return s.Length; }
-                }
-            }";
-
-            var assy = compiler.CompileText(code);
-            object? inst = null;
-            Type? type = assy!.GetType("DontCare.Klass");
-            inst = Activator.CreateInstance(type!);
-
-            // Methods
-            var miDev = type!.GetMethod("Dev");
-            var piTime = type.GetProperty("RealTime");
-            var miTimeGet = piTime!.GetGetMethod();
-            var miTimeSet = piTime.GetSetMethod();
-
-            // Delegates
-            var delDev = (Func<string, int>)Delegate.CreateDelegate(typeof(Func<string, int>), inst, miDev!);
-            var delTimeGet = (Func<double>)Delegate.CreateDelegate(typeof(Func<double>), inst, miTimeGet!);
-            var delTimeSet = (Action<double>)Delegate.CreateDelegate(typeof(Action<double>), inst, miTimeSet!);
-
-            List<long> invoked = [];
-            List<long> delegated = [];
-            List<long> prop = [];
-
-            for (int i = 0; i < 10; i++)
-            {
-                var start1 = Stopwatch.GetTimestamp();
-                miDev!.Invoke(inst, ["xxx"]);
-                invoked.Add(Stopwatch.GetTimestamp() - start1);
-
-                var start2 = Stopwatch.GetTimestamp();
-                delDev("xxx");
-                delegated.Add(Stopwatch.GetTimestamp() - start2);
-
-                var start3 = Stopwatch.GetTimestamp();
-                //piTime.GetValue(inst);
-                delTimeGet();
-                prop.Add(Stopwatch.GetTimestamp() - start3);
-
-                //System.Threading.Thread.Sleep(50);
-            }
-
-            // Examine effects.
-            // property delegates: using the results of the GetGetMethod and GetSetMethod methods of PropertyInfo.
-            var ntime = piTime.GetValue(inst);
-
-            for (int i = 0; i < invoked.Count; i++)
-            {
-                Console.WriteLine($"iter{i} invoked:{invoked[i]} delegated:{delegated[i]} prop:{prop[i]}");
-            }
         }
     }
 
@@ -190,8 +130,11 @@ namespace Example
         {
             _ = Utils.WarmupRoslyn();
 
+            //var dev = new Dev();
+            //dev.Explore();
+            //return; 
+
             var app = new Example();
-            app.Probe(); return;
             var ret = app.Run();
             if (ret > 0)
             {

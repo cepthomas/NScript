@@ -16,6 +16,8 @@ public class Game999 : ScriptBase
     public override int Setup(string info, int worldX, int worldY)
     {
         Print($"Setup(): {info}");
+        _worldX = worldX;
+        _worldY = worldY;
 
         CreatePlayer(Role.Oligarch, "Vladimir");
         CreatePlayer(Role.Sycophant, "Donald");
@@ -33,7 +35,7 @@ public class Game999 : ScriptBase
     {
         Print($"Move()");
 
-        RealTime += 1;
+        RealTime += 5;
 
         var player = RandomPlayer();
 
@@ -52,10 +54,5 @@ public class Game999 : ScriptBase
         }
 
         return 0;
-    }
-
-    public override int Dev(string s)
-    {
-        return s.Length;
     }
 }

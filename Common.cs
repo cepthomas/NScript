@@ -8,7 +8,6 @@ using System.Diagnostics;
 using System.Threading.Tasks;
 using Ephemera.NBagOfTricks;
 
-//TODOX this stuff is only used by Engine and could go in that file.
 
 namespace Ephemera.NScript
 {

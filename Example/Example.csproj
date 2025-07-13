@@ -14,7 +14,7 @@
         <RootNamespace>Ephemera.NScript.Example</RootNamespace>
         <AssemblyName>Ephemera.NScript.Example</AssemblyName>
         <!-- <DefineConstants>DEBUG;TRACE</DefineConstants> -->
-        <NoWarn>CS1591</NoWarn>
+        <NoWarn>CS1591;CA1822;IDE0130</NoWarn>
         <Nullable>enable</Nullable>
         <WarningLevel>4</WarningLevel>
         <GenerateDocumentationFile>true</GenerateDocumentationFile>

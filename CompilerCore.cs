@@ -173,7 +173,6 @@ namespace Ephemera.NScript
             {
                 // Load into currently running assembly.
                 var assy = Assembly.Load(ms.ToArray());
-                //var types = assy.GetTypes();
                 AddReport(ReportType.Internal, ReportLevel.Info, $"Compiled text: {(DateTime.Now - startTime).Milliseconds} msec.");
                 return assy;
             }
