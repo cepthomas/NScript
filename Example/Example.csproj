@@ -30,8 +30,12 @@
     </ItemGroup>
 
     <ItemGroup>
-      <Compile Remove="bench.cs" />
-      <Compile Remove="ScriptApi.cs" />
+      <Compile Remove="Dev.cs" />
+      <Compile Remove="ScriptCore.cs" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <AdditionalFiles Include="ScriptCore.cs" />
     </ItemGroup>
 
     <ItemGroup>
@@ -42,21 +46,6 @@
         <Reference Include="Ephemera.NBagOfTricks">
           <HintPath>..\lib\Ephemera.NBagOfTricks.dll</HintPath>
         </Reference>
-    </ItemGroup>
-
-    <ItemGroup>
-      <Compile Update="ScriptBase.cs">
-        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-      </Compile>
-    </ItemGroup>
-
-    <ItemGroup>
-      <None Update="Game999.csx">
-        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-      </None>
-      <None Update="Utils.csx">
-        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-      </None>
     </ItemGroup>
 
 </Project>

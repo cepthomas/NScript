@@ -13,6 +13,13 @@ using Microsoft.CodeAnalysis.Text;
 using Ephemera.NBagOfTricks;
 
 
+// TODOX does this apply? https://carljohansen.wordpress.com/2020/05/09/compiling-expression-trees-with-roslyn-without-memory-leaks-2/
+// Not for the Example (run to completion then exit) but yes for long-running apps that reload externally modified scripts.
+// Assemblies, once loaded, cannot be unloaded until the process shuts down or the AssemblyLoadContext is unloaded.
+// In  .NET Framework there's no way to unload, but in .NET Core you can use an alternate AssemblyLoadContext which if provided
+// can be used to unload assemblies loaded in the context conditionally.
+
+
 
 namespace Ephemera.NScript
 {
@@ -27,9 +34,12 @@ namespace Ephemera.NScript
         public string? ScriptPath { get; set; }
 
         /// <summary>Script namespace.</summary>
-        public required string Namespace { get; set; }
+        public string Namespace { get; set; } = "Anonymous";
 
-        /// <summary>Client may need to tell us this for temp files.</summary>
+        /// <summary>Base class.</summary>
+        public string BaseClassName { get; set; } = "GenericClass";
+
+        /// <summary>Client may weant to tell us this for temp files.</summary>
         public string? TempDir { get; set; }
 
         /// <summary>Default system dlls. Client can add or subtract.</summary>
@@ -54,14 +64,14 @@ namespace Ephemera.NScript
         /// <summary>App dlls supplied by app compiler.</summary>
         public List<string> LocalDlls { get; set; } = [];
 
-        /// <summary>The compiled script.</summary>
+        /// <summary>The final compiled script.</summary>
         public object? CompiledScript { get; set; } = null;
 
         /// <summary>Accumulated errors and other bits of information - for user presentation.</summary>
         public List<Report> Reports { get; } = [];
 
-        /// <summary>All the directives. Key is name. These are global, not per file!</summary>
-        public Dictionary<string, string> Directives { get; } = [];
+        /// <summary>All the directives - name and value. These are global, not per file!</summary>
+        public List<(string dirname, string dirval)> Directives { get; } = [];
 
         /// <summary>All active script source files. Provided so client can monitor for external changes.</summary>
         public IEnumerable<string> SourceFiles { get { return [.. _scriptFiles.Select(f => f.SourceFileName)]; } }
@@ -70,9 +80,6 @@ namespace Ephemera.NScript
         #region Fields
         /// <summary>Script info.</summary>
         string _scriptName = "???";
-
-        /// <summary>Base class.</summary>
-        string _baseName = "???";
 
         /// <summary>Products of preprocess.</summary>
         readonly List<ScriptFile> _scriptFiles = [];
@@ -98,10 +105,9 @@ namespace Ephemera.NScript
 
         #region Public functions
         /// <summary>Run the compiler on a script file.</summary>
-        /// <param name="scriptFn">Path to main script file.</param>
-        /// <param name="baseName">Base class name.</param>
-        /// <param name="sourceFns">S code files.</param>
-        public void CompileScript(string scriptFn, string baseName, List<string> sourceFns)
+        /// <param name="scriptFile">Path to main script file.</param>
+        /// <param name="sourceFiles">Source code files.</param>
+        public void CompileScript(string scriptFile, List<string>? sourceFiles = null)
         {
             // Reset everything.
             CompiledScript = null;
@@ -112,21 +118,26 @@ namespace Ephemera.NScript
             try
             {
                 DateTime startTime = DateTime.Now;
-                _baseName = baseName;
-                _plainFiles.AddRange(sourceFns);
+
+                if (sourceFiles != null)
+                {
+                    _plainFiles.AddRange(sourceFiles);
+                }
+
+                // Dig out bits from the core file.
 
                 // Derived class hook.
                 PreCompile();
 
                 // Get and sanitize the script name.
-                _scriptName = Path.GetFileNameWithoutExtension(scriptFn);
+                _scriptName = Path.GetFileNameWithoutExtension(scriptFile);
                 StringBuilder sb = new();
                 _scriptName.ForEach(c => sb.Append(char.IsLetterOrDigit(c) ? c : '_'));
                 _scriptName = sb.ToString();
-                var dir = Path.GetDirectoryName(scriptFn);
+                var dir = Path.GetDirectoryName(scriptFile);
 
                 // Process the source files into something that can be compiled.
-                ScriptFile pcont = new(scriptFn) { TopLevel = true } ;
+                ScriptFile pcont = new(scriptFile) { TopLevel = true } ;
                 bool valid = PreprocessFile(pcont); // recursive function
 
                 // Compile the processed files.
@@ -476,7 +487,7 @@ namespace Ephemera.NScript
                             else
                             {
                                 // Just add to global collection.
-                                Directives[directive] = dval;
+                                Directives.Add((directive, dval));
                             }
                         }
 
@@ -519,12 +530,9 @@ namespace Ephemera.NScript
             string origin = fn == "" ? "internal" : fn; // .\Game999.csx
             string className = Path.GetFileNameWithoutExtension(origin);
 
-            string baseClass = pcont.TopLevel ? $" : {_baseName}" : "";
+            string baseClass = pcont.TopLevel ? $" : {BaseClassName}" : "";
 
-            // Create the common contents.
-            //public class Game999 : ScriptBase
-            //public class Utils : ScriptBase
-
+            // Create the common contents. Like  public class Game999 : ScriptCore
             List<string> codeLines =
             [
                 $"// Created from {origin} {DateTime.Now}",

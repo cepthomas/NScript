@@ -1,6 +1,5 @@
 
-// An included file with app utility functions.
-//public class Utils : ScriptBase
+// An included file with some app utility functions.
 
 int notavar = 911;
 

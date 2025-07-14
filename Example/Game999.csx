@@ -2,15 +2,12 @@
 // Preprocesser directives
 
 #:include Utils.csx
-#:kustom cheeseburger
-#:directive_no_arg
-
-
-//public class Game999 : ScriptBase
+#:kustom cheeseburger with onions
+#:directive_with_no_arg // for a test
 
 Utils u = new();
 
-JUNK
+JUNK // for a test
 
 // Required overrides.
 public override int Setup(string info, int worldX, int worldY)

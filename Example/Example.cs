@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
+using System.Linq;
 using System.Reflection;
 using System.Threading.Tasks;
 using Ephemera.NBagOfTricks;
@@ -16,20 +17,24 @@ namespace Example
         /// <returns>Exit code: 0=ok 1=compiler or syntax error 2=runtime error</returns>
         public int Run()
         {
-            ///// Compile script with application options.
+            // Compile script with application options. GameCompiler is this app-specific flavor.
+            // It's defined below, or could be in a separate file.
             GameCompiler compiler = new()
             {
-                ScriptPath = ".",
-                IgnoreWarnings = true,
-                Namespace = "Example.Script" // same as ScriptBase.cs
+                ScriptPath = MiscUtils.GetSourcePath(), // where my scripts live
+                IgnoreWarnings = true,                  // to taste
+                Namespace = "Example.Script",           // same as ScriptCore.cs
+                BaseClassName = "ScriptCore",           // same as ScriptCore.cs
             };
 
+            // Components of executable script.
             var scriptFile = Path.Combine(compiler.ScriptPath, "Game999.csx");
-            var baseFile = Path.Combine(compiler.ScriptPath, "ScriptBase.cs");
+            var coreFile = Path.Combine(compiler.ScriptPath, "ScriptCore.cs");
 
-            // Namespace should be the same as ScriptBase.cs.
-            compiler.CompileScript(scriptFile, "ScriptBase", [baseFile]);
+            // Run the compiler.
+            compiler.CompileScript(scriptFile, [coreFile]);
 
+            // What happened?
             if (compiler.CompiledScript is null)
             {
                 Console.WriteLine($"Compile failed:");
@@ -37,20 +42,20 @@ namespace Example
                 return 1;
             }
 
-            ///// Execute script. Needs exception handling to protect from user runtime script errors.
+            // OK here. Load and execute script. Needs exception handling to detect user runtime script errors.
             try
             {
                 // Init script.
                 var inst = compiler.CompiledScript;
                 var type = inst.GetType();
 
-                // Reflection methods.
-                var miInit = type.GetMethod("Init");
-                var miSetup = type.GetMethod("Setup");
-                var miMove = type.GetMethod("Move");
-                var piTime = type.GetProperty("RealTime");
+                // Could use simple reflection methods:
+                // var miInit = type.GetMethod("Init");
+                // var miSetup = type.GetMethod("Setup");
+                // var miMove = type.GetMethod("Move");
+                // var piTime = type.GetProperty("RealTime");
 
-                // Delegates.
+                // But delegates are better.
                 var Init = (Func<TextWriter, int>)Delegate.CreateDelegate(typeof(Func<TextWriter, int>), inst, type.GetMethod("Init")!);
                 var Setup = (Func<string, int, int, int>)Delegate.CreateDelegate(typeof(Func<string, int, int, int>), inst, type.GetMethod("Setup")!);
                 var Move = (Func<int>)Delegate.CreateDelegate(typeof(Func<int>), inst, type.GetMethod("Move")!);
@@ -61,7 +66,7 @@ namespace Example
                 Init(Console.Out);
                 Setup("Here I am!!!", 60, 80);
                 SetRealTime(500);
-                // Using invoke:
+                // Using simple reflection:
                 //miInit!.Invoke(inst, [Console.Out]);
                 //miSetup!.Invoke(inst, ["Here I am!!!", 60, 80]);
                 //piTime!.SetValue(inst, 100.0);
@@ -88,10 +93,11 @@ namespace Example
         }
     }
 
-    /// <summary>The accompanying processor.</summary>
+    /// <summary>The compiler specific to the application.</summary>
     class GameCompiler : CompilerCore
     {
         #region Compiler override options
+        /// <summary>Called before compiler starts.</summary>
         /// <see cref="CompilerCore"/>
         protected override void PreCompile()
         {
@@ -100,22 +106,28 @@ namespace Example
             Usings.Add("Example.Script"); // script core Example.Script
         }
 
+        /// <summary>Called after compiler finished.</summary>
         /// <see cref="CompilerCore"/>
         protected override void PostCompile()
         {
-            if (Directives.TryGetValue("kustom", out string? value))
-            {
-                Console.WriteLine($"Script has {value}!");
-            }
+            // Check for our app-specific directives.
+            Directives
+                .Where(d => d.dirname == "kustom")
+                .ForEach(dk => Console.WriteLine($"Script has a {dk.dirval}!"));
         }
 
+        /// <summary>Called for each line in the source file before compiling.</summary>
+        /// <param name="sline">Trimmed line</param>
+        /// <param name="pcont">File context</param>
+        /// <param name="lineNum">Source line number may be useful (1-based)</param>
+        /// <returns>True if derived class took care of this</returns>
         /// <see cref="CompilerCore"/>
         protected override bool PreprocessLine(string sline, int lineNum, ScriptFile pcont)
         {
-            // Check for any specials.
-            if (sline.Trim() == "JUNK")
+            // Check for anything specific to this flavor of script.
+            if (sline.Contains("JUNK"))
             {
-                // Could do something useful with this.
+                // Could do something meaningful with this.
                 return true;
             }
             return false;
@@ -123,16 +135,12 @@ namespace Example
         #endregion
     }
 
-    /// <summary>Start here.</summary>
+    /// <summary>Example starts here.</summary>
     internal class Program
     {
         static void Main()
         {
-            _ = Utils.WarmupRoslyn();
-
-            //var dev = new Dev();
-            //dev.Explore();
-            //return; 
+            //_ = Utils.WarmupRoslyn();
 
             var app = new Example();
             var ret = app.Run();

@@ -9,7 +9,7 @@ using System.IO;
 
 namespace Example.Script
 {
-    public class ScriptBase
+    public class ScriptCore
     {
         #region Types
         /// <summary>Player roles.</summary>
