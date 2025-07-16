@@ -30,8 +30,8 @@ namespace Ephemera.NScript
         /// <summary>Client option.</summary>
         public bool IgnoreWarnings { get; set; } = false;
 
-        /// <summary>Client may need to tell us this for #:include directive.</summary>
-        public string? ScriptPath { get; set; }
+        ///// <summary>Client may need to tell us this for #:include directive.</summary>
+        //public string? ScriptPath { get; set; }
 
         /// <summary>Script namespace.</summary>
         public string Namespace { get; set; } = "Anonymous";
@@ -39,27 +39,27 @@ namespace Ephemera.NScript
         /// <summary>Base class.</summary>
         public string BaseClassName { get; set; } = "GenericClass";
 
-        /// <summary>Client may weant to tell us this for temp files.</summary>
+        /// <summary>Client may weant to tell us to use this for temp files.</summary>
         public string? TempDir { get; set; }
 
         /// <summary>Default system dlls. Client can add or subtract.</summary>
-        public List<string> SystemDlls { get; } =
-        [
-            "System",
-            "System.Private.CoreLib",
-            "System.Runtime",
-            "System.IO",    
-            "System.Collections",
-            "System.Linq"
-        ];
+        public List<string> SystemDlls { get; set; } = [];
+        //[
+        //    "System",
+        //    "System.Private.CoreLib",
+        //    "System.Runtime",
+        //    "System.IO",    
+        //    "System.Collections",
+        //    "System.Linq"
+        //];
 
         /// <summary>Additional using statements not supplied by core dlls.</summary>
-        public List<string> Usings { get; set; } =
-        [
-            "System.Collections.Generic",
-            "System.Diagnostics",
-            "System.Text"
-        ];
+        public List<string> Usings { get; set; } = [];
+        //[
+        //    "System.Collections.Generic",
+        //    "System.Diagnostics",
+        //    "System.Text"
+        //];
 
         /// <summary>App dlls supplied by app compiler.</summary>
         public List<string> LocalDlls { get; set; } = [];
@@ -70,7 +70,7 @@ namespace Ephemera.NScript
         /// <summary>Accumulated errors and other bits of information - for user presentation.</summary>
         public List<Report> Reports { get; } = [];
 
-        /// <summary>All the directives - name and value. These are global, not per file!</summary>
+        /// <summary>All the script directives - name and value. These are global, not per file!</summary>
         public List<(string dirname, string dirval)> Directives { get; } = [];
 
         /// <summary>All active script source files. Provided so client can monitor for external changes.</summary>
@@ -78,8 +78,8 @@ namespace Ephemera.NScript
         #endregion
 
         #region Fields
-        /// <summary>Script info.</summary>
-        string _scriptName = "???";
+ //       /// <summary>Script info.</summary>
+//        string _scriptName = "???";
 
         /// <summary>Products of preprocess.</summary>
         readonly List<ScriptFile> _scriptFiles = [];
@@ -97,11 +97,20 @@ namespace Ephemera.NScript
 
         /// <summary>Called for each line in the source file before compiling.</summary>
         /// <param name="sline">Trimmed line</param>
-        /// <param name="pcont">File context</param>
         /// <param name="lineNum">Source line number may be useful (1-based)</param>
+        /// <param name="pcont">File context</param>
         /// <returns>True if derived class took care of this</returns>
         protected virtual bool PreprocessLine(string sline, int lineNum, ScriptFile pcont) { return false; }
         #endregion
+
+        string MakeClassName(string fn)
+        {
+            // Get and sanitize the script name.
+            var fff = Path.GetFileNameWithoutExtension(fn);
+            StringBuilder sb = new();
+            fff.ForEach(c => sb.Append(char.IsLetterOrDigit(c) ? c : '_'));
+            return sb.ToString();
+        }
 
         #region Public functions
         /// <summary>Run the compiler on a script file.</summary>
@@ -112,8 +121,12 @@ namespace Ephemera.NScript
             // Reset everything.
             CompiledScript = null;
             Reports.Clear();
+            Directives.Clear();
+
             _scriptFiles.Clear();
             _plainFiles.Clear();
+
+            var scriptName = "???";
 
             try
             {
@@ -124,24 +137,175 @@ namespace Ephemera.NScript
                     _plainFiles.AddRange(sourceFiles);
                 }
 
-                // Dig out bits from the core file.
-
                 // Derived class hook.
                 PreCompile();
 
                 // Get and sanitize the script name.
-                _scriptName = Path.GetFileNameWithoutExtension(scriptFile);
-                StringBuilder sb = new();
-                _scriptName.ForEach(c => sb.Append(char.IsLetterOrDigit(c) ? c : '_'));
-                _scriptName = sb.ToString();
+                //_scriptName = Path.GetFileNameWithoutExtension(scriptFile);
+                //StringBuilder sb = new();
+                //_scriptName.ForEach(c => sb.Append(char.IsLetterOrDigit(c) ? c : '_'));
+                //_scriptName = sb.ToString();
+                scriptName = MakeClassName(scriptFile);
+
                 var dir = Path.GetDirectoryName(scriptFile);
+                if (dir is null)
+                {
+                    AddReport(ReportType.Syntax, ReportLevel.Error, $"Invalid script file: {scriptFile}");
+                    throw new ScriptException();
+                }
+
+                // Create temp output area and/or clean it.
+                var tempDir = TempDir ?? Path.Combine(dir, "temp");
+                Directory.CreateDirectory(tempDir);
+                Directory.GetFiles(tempDir).ForEach(f => File.Delete(f));
 
                 // Process the source files into something that can be compiled.
                 ScriptFile pcont = new(scriptFile) { TopLevel = true } ;
-                bool valid = PreprocessFile(pcont); // recursive function
+                bool valid = PreprocessFile(pcont); // >>> recursive function
 
                 // Compile the processed files.
-                Compile(dir!);
+                //Compile(dir!);
+
+                ///////////////////////////////////////////////////////
+                ///////////////////////////////////////////////////////
+                ///////////////////////////////////////////////////////
+
+
+                CompiledScript = null;
+
+
+                // Assemble constituents.
+                List<SyntaxTree> trees = [];
+                var encoding = Encoding.UTF8; // ASCII?
+
+                // Write the generated source files to temp build area.
+                foreach (var tocomp in _scriptFiles)
+                {
+                    if (tocomp.GeneratedCode.Count > 0)
+                    {
+                        // Create a file that can be placed in the pdb.
+                        string fullpath = Path.Combine(tempDir, tocomp.GeneratedFileName);
+                        File.WriteAllLines(fullpath, tocomp.GeneratedCode);
+                        // Build a syntax tree.
+                        string code = File.ReadAllText(fullpath, encoding);
+                        CSharpParseOptions popts = new();
+                        SyntaxTree tree = CSharpSyntaxTree.ParseText(text: code, path: fullpath, options: popts, encoding: encoding);
+                        trees.Add(tree);
+                    }
+                }
+
+                // Plain files require simpler handling.
+                foreach (var fn in _plainFiles)
+                {
+                    // Build a syntax tree.
+                    string code = File.ReadAllText(fn, encoding);
+                    CSharpParseOptions popts = new();
+                    SyntaxTree tree = CSharpSyntaxTree.ParseText(text: code, path: fn, options: popts, encoding: encoding);
+                    trees.Add(tree);
+                }
+
+                // References needed to compile the code.
+                var references = new List<MetadataReference>();
+
+                // System stuff location.
+                var dotnetStore = Path.GetDirectoryName(typeof(object).Assembly.Location);
+
+                // Project refs like nuget.
+                var localStore = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
+
+                // System dlls.
+                SystemDlls.ForEach(dll => references.Add(MetadataReference.CreateFromFile(Path.Combine(dotnetStore!, dll + ".dll"))));
+                // Had to add this for Enum per https://github.com/dotnet/roslyn/issues/50612
+                references.Add(MetadataReference.CreateFromFile(Assembly.Load("netstandard").Location));
+
+                // Local dlls.
+                LocalDlls.ForEach(dll => references.Add(MetadataReference.CreateFromFile(Path.Combine(localStore!, dll + ".dll"))));
+
+                // Emit the whole mess to streams.
+                using var ms = new MemoryStream();
+                using var pdbs = new MemoryStream();
+
+                var copts = new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary);
+                var emitOptions = new EmitOptions().
+                    WithDebugInformationFormat(DebugInformationFormat.PortablePdb).
+                    WithDefaultSourceFileEncoding(encoding);
+                var compilation = CSharpCompilation.Create($"{scriptName}", trees, references, copts);
+
+                var result = compilation.Emit(peStream: ms, pdbStream: pdbs, options: emitOptions);
+
+                if (result.Success)
+                {
+                    // Load into currently running assembly and locate the new script.
+                    var assy = Assembly.Load(ms.ToArray(), pdbs.ToArray());
+                    var types = assy.GetTypes();
+
+                    foreach (Type t in types)
+                    {
+                        //AddReport(ReportType.Internal, ReportLevel.Info, $"Type {t.Name}.");
+                        if (t is not null && t.Name == scriptName)
+                        {
+                            // We have a good script file. Create the executable object.
+                            CompiledScript = Activator.CreateInstance(t);
+                        }
+                    }
+
+                    if (CompiledScript is null)
+                    {
+                        AddReport(ReportType.Internal, ReportLevel.Error, $"Couldn't activate script {scriptName}.");
+                        throw new ScriptException(); // fatal
+                    }
+                }
+
+                // Collect results.
+                bool fatal = false;
+                foreach (var diag in result.Diagnostics)
+                {
+                    // Get the original context.
+                    var fileName = diag.Location != Location.None ? diag.Location.SourceTree!.FilePath : "No File";
+                    var lineNum = diag.Location != Location.None ? diag.Location.GetLineSpan().StartLinePosition.Line : -1; // 0-based
+                    var msg = diag.GetMessage();
+                    var level = Translate(diag.Severity);
+
+                    var sfiles = _scriptFiles.Where(f => f.GeneratedFileName == Path.GetFileName(fileName));
+                    if (sfiles.Any()) // It's a script file.
+                    {
+                        var sf = sfiles.First();
+                        int srcLineNum = sf.GetSourceLineNumber(lineNum);
+
+                        if (srcLineNum == -1) // something in user api or compiler, probably
+                        {
+                            AddReport(ReportType.Syntax, level, $"{msg} => {sf.GeneratedCode[lineNum]}", sf.SourceFileName, srcLineNum);
+                        }
+                        else // regular user error
+                        {
+                            AddReport(ReportType.Syntax, level, msg, sf.SourceFileName, srcLineNum);
+                        }
+                    }
+                    else if (_plainFiles.Contains(fileName))
+                    {
+                        AddReport(ReportType.Syntax, level, msg, fileName, lineNum + 1);
+                    }
+                    else // other error?
+                    {
+                        AddReport(ReportType.Internal, ReportLevel.Error, msg, fileName, lineNum + 1);
+                    }
+                    fatal |= (level == ReportLevel.Error);
+                }
+                if (fatal)
+                {
+                    throw new ScriptException();
+                }
+
+
+
+
+
+
+                ///////////////////////////////////////////////////////
+                ///////////////////////////////////////////////////////
+                ///////////////////////////////////////////////////////
+
+
 
                 AddReport(ReportType.Internal, ReportLevel.Info, $"Compiled script: {(DateTime.Now - startTime).Milliseconds} msec.");
 
@@ -254,168 +418,140 @@ namespace Ephemera.NScript
         }
         #endregion
 
-        #region Protected functions
-        /// <summary>Log script errors.</summary>
-        /// <param name="type"></param>
-        /// <param name="level"></param>
-        /// <param name="msg"></param>
-        /// <param name="scriptFile"></param>
-        /// <param name="lineNum"></param>
-        protected void AddReport(ReportType type, ReportLevel level, string msg, string? scriptFile = null, int? lineNum = null)
-        {
-            if (level != ReportLevel.None)
-            {
-                if (scriptFile is not null)
-                {
-                    scriptFile = Path.GetFileName(scriptFile);
-                }
+        #region Private and protected functions
+        ///// <summary>The actual script compiler worker.</summary>
+        ///// <param name="baseDir">Fully qualified path to main script file dir.</param>
+        //void Compile(string baseDir)
+        //{
+        //    CompiledScript = null;
 
-                var rep = new Report()
-                {
-                    ReportType = type,
-                    Level = level,
-                    Message = msg,
-                    SourceFileName = scriptFile,
-                    SourceLineNumber = lineNum ?? -1
-                };
-                Reports.Add(rep);
-            }
-        }
-        #endregion
+        //    // Create temp output area and/or clean it.
+        //    var tempDir = TempDir ?? Path.Combine(baseDir, "temp");
+        //    Directory.CreateDirectory(tempDir);
+        //    Directory.GetFiles(tempDir).ForEach(f => File.Delete(f));
 
-        #region Private functions
-        /// <summary>The actual script compiler worker.</summary>
-        /// <param name="baseDir">Fully qualified path to main file.</param>
-        void Compile(string baseDir)
-        {
-            CompiledScript = null;
+        //    // Assemble constituents.
+        //    List<SyntaxTree> trees = [];
+        //    var encoding = Encoding.UTF8; // ASCII?
 
-            // Create temp output area and/or clean it.
-            var tempDir = TempDir ?? Path.Combine(baseDir, "temp");
-            Directory.CreateDirectory(tempDir);
-            Directory.GetFiles(tempDir).ForEach(f => File.Delete(f));
+        //    // Write the generated source files to temp build area.
+        //    foreach (var tocomp in _scriptFiles)
+        //    {
+        //        if (tocomp.GeneratedCode.Count > 0)
+        //        {
+        //            // Create a file that can be placed in the pdb.
+        //            string fullpath = Path.Combine(tempDir, tocomp.GeneratedFileName);
+        //            File.WriteAllLines(fullpath, tocomp.GeneratedCode);
+        //            // Build a syntax tree.
+        //            string code = File.ReadAllText(fullpath, encoding);
+        //            CSharpParseOptions popts = new();
+        //            SyntaxTree tree = CSharpSyntaxTree.ParseText(text: code, path: fullpath, options: popts, encoding: encoding);
+        //            trees.Add(tree);
+        //        }
+        //    }
 
-            // Assemble constituents.
-            List<SyntaxTree> trees = [];
-            var encoding = Encoding.UTF8; // ASCII?
+        //    // Plain files require simpler handling.
+        //    foreach (var fn in _plainFiles)
+        //    {
+        //        // Build a syntax tree.
+        //        string code = File.ReadAllText(fn, encoding);
+        //        CSharpParseOptions popts = new();
+        //        SyntaxTree tree = CSharpSyntaxTree.ParseText(text: code, path: fn, options: popts, encoding: encoding);
+        //        trees.Add(tree);
+        //    }
 
-            // Write the generated source files to temp build area.
-            foreach (var tocomp in _scriptFiles)
-            {
-                if (tocomp.GeneratedCode.Count > 0)
-                {
-                    // Create a file that can be placed in the pdb.
-                    string fullpath = Path.Combine(tempDir, tocomp.GeneratedFileName);
-                    File.WriteAllLines(fullpath, tocomp.GeneratedCode);
-                    // Build a syntax tree.
-                    string code = File.ReadAllText(fullpath, encoding);
-                    CSharpParseOptions popts = new();
-                    SyntaxTree tree = CSharpSyntaxTree.ParseText(text: code, path: fullpath, options: popts, encoding: encoding);
-                    trees.Add(tree);
-                }
-            }
+        //    // References needed to compile the code.
+        //    var references = new List<MetadataReference>();
 
-            // Plain files require simpler handling.
-            foreach (var fn in _plainFiles)
-            {
-                // Build a syntax tree.
-                string code = File.ReadAllText(fn, encoding);
-                CSharpParseOptions popts = new();
-                SyntaxTree tree = CSharpSyntaxTree.ParseText(text: code, path: fn, options: popts, encoding: encoding);
-                trees.Add(tree);
-            }
+        //    // System stuff location.
+        //    var dotnetStore = Path.GetDirectoryName(typeof(object).Assembly.Location);
 
-            // References needed to compile the code.
-            var references = new List<MetadataReference>();
+        //    // Project refs like nuget.
+        //    var localStore = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
 
-            // System stuff location.
-            var dotnetStore = Path.GetDirectoryName(typeof(object).Assembly.Location);
+        //    // System dlls.
+        //    SystemDlls.ForEach(dll => references.Add(MetadataReference.CreateFromFile(Path.Combine(dotnetStore!, dll + ".dll"))));
+        //    // Had to add this for Enum per https://github.com/dotnet/roslyn/issues/50612
+        //    references.Add(MetadataReference.CreateFromFile(Assembly.Load("netstandard").Location));
 
-            // Project refs like nuget.
-            var localStore = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
+        //    // Local dlls.
+        //    LocalDlls.ForEach(dll => references.Add(MetadataReference.CreateFromFile(Path.Combine(localStore!, dll + ".dll"))));
 
-            // System dlls.
-            SystemDlls.ForEach(dll => references.Add(MetadataReference.CreateFromFile(Path.Combine(dotnetStore!, dll + ".dll"))));
-            // Had to add this for Enum per https://github.com/dotnet/roslyn/issues/50612
-            references.Add(MetadataReference.CreateFromFile(Assembly.Load("netstandard").Location));
+        //    // Emit the whole mess to streams.
+        //    using var ms = new MemoryStream();
+        //    using var pdbs = new MemoryStream();
 
-            // Local dlls.
-            LocalDlls.ForEach(dll => references.Add(MetadataReference.CreateFromFile(Path.Combine(localStore!, dll + ".dll"))));
+        //    var copts = new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary);
+        //    var emitOptions = new EmitOptions().
+        //        WithDebugInformationFormat(DebugInformationFormat.PortablePdb).
+        //        WithDefaultSourceFileEncoding(encoding);
+        //    var compilation = CSharpCompilation.Create($"{_scriptName}", trees, references, copts);
 
-            // Emit the whole mess to streams.
-            using var ms = new MemoryStream();
-            using var pdbs = new MemoryStream();
+        //    var result = compilation.Emit(peStream: ms, pdbStream: pdbs, options: emitOptions);
 
-            var copts = new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary);
-            var emitOptions = new EmitOptions().
-                WithDebugInformationFormat(DebugInformationFormat.PortablePdb).
-                WithDefaultSourceFileEncoding(encoding);
-            var compilation = CSharpCompilation.Create($"{_scriptName}", trees, references, copts);
+        //    if (result.Success)
+        //    {
+        //        // Load into currently running assembly and locate the new script.
+        //        var assy = Assembly.Load(ms.ToArray(), pdbs.ToArray());
+        //        var types = assy.GetTypes();
 
-            var result = compilation.Emit(peStream: ms, pdbStream: pdbs, options: emitOptions);
+        //        foreach (Type t in types)
+        //        {
+        //            AddReport(ReportType.Internal, ReportLevel.Info, $"Type {t.Name}.");
+        //            if (t is not null && t.Name == _scriptName)
+        //            {
+        //                // We have a good script file. Create the executable object.
+        //                CompiledScript = Activator.CreateInstance(t);
+        //            }
+        //        }
 
-            if (result.Success)
-            {
-                // Load into currently running assembly and locate the new script.
-                var assy = Assembly.Load(ms.ToArray(), pdbs.ToArray());
-                var types = assy.GetTypes();
+        //        if (CompiledScript is null)
+        //        {
+        //            AddReport(ReportType.Internal, ReportLevel.Error, $"Couldn't activate script {_scriptName}.");
+        //            throw new ScriptException(); // fatal
+        //        }
+        //    }
 
-                foreach (Type t in types)
-                {
-                    AddReport(ReportType.Internal, ReportLevel.Info, $"Type {t.Name}.");
-                    if (t is not null && t.Name == _scriptName)
-                    {
-                        // We have a good script file. Create the executable object.
-                        CompiledScript = Activator.CreateInstance(t);
-                    }
-                }
+        //    // Collect results.
+        //    bool fatal = false;
+        //    foreach (var diag in result.Diagnostics)
+        //    {
+        //        // Get the original context.
+        //        var fileName = diag.Location != Location.None ? diag.Location.SourceTree!.FilePath : "No File";
+        //        var lineNum = diag.Location != Location.None ? diag.Location.GetLineSpan().StartLinePosition.Line : -1; // 0-based
+        //        var msg = diag.GetMessage();
+        //        var level = Translate(diag.Severity);
 
-                if (CompiledScript is null)
-                {
-                    AddReport(ReportType.Internal, ReportLevel.Error, $"Couldn't activate script {_scriptName}.");
-                    throw new ScriptException(); // fatal
-                }
-            }
+        //        var sfiles = _scriptFiles.Where(f => f.GeneratedFileName == Path.GetFileName(fileName));
+        //        if (sfiles.Any()) // It's a script file.
+        //        {
+        //            var sf = sfiles.First();
+        //            int srcLineNum = sf.GetSourceLineNumber(lineNum);
 
-            // Collect results.
-            foreach (var diag in result.Diagnostics)
-            {
-                // Get the original context.
-                var fileName = diag.Location != Location.None ? diag.Location.SourceTree!.FilePath : "No File";
-                var lineNum = diag.Location != Location.None ? diag.Location.GetLineSpan().StartLinePosition.Line : -1; // 0-based
-                var msg = diag.GetMessage();
-                var level = Translate(diag.Severity);
-
-                var sfiles = _scriptFiles.Where(f => f.GeneratedFileName == Path.GetFileName(fileName));
-                if (sfiles.Any()) // It's a script file.
-                {
-                    var sf = sfiles.First();
-                    int srcLineNum = sf.GetSourceLineNumber(lineNum);
-
-                    if (srcLineNum == -1) // something in user api or compiler, probably
-                    {
-                        AddReport(ReportType.Syntax, level, $"{msg} => {sf.GeneratedCode[lineNum]}", sf.SourceFileName, srcLineNum);
-                    }
-                    else // regular user error
-                    {
-                        AddReport(ReportType.Syntax, level, msg, sf.SourceFileName, srcLineNum);
-                    }
-                }
-                else if (_plainFiles.Contains(fileName))
-                {
-                    AddReport(ReportType.Syntax, level, msg, fileName, lineNum + 1);
-                }
-                else // other error?
-                {
-                    AddReport(ReportType.Internal, ReportLevel.Error, msg, fileName, lineNum + 1);
-                }
-
-                if (level == ReportLevel.Error)
-                {
-                    throw new ScriptException(); // fatal
-                }
-            }
-        }
+        //            if (srcLineNum == -1) // something in user api or compiler, probably
+        //            {
+        //                AddReport(ReportType.Syntax, level, $"{msg} => {sf.GeneratedCode[lineNum]}", sf.SourceFileName, srcLineNum);
+        //            }
+        //            else // regular user error
+        //            {
+        //                AddReport(ReportType.Syntax, level, msg, sf.SourceFileName, srcLineNum);
+        //            }
+        //        }
+        //        else if (_plainFiles.Contains(fileName))
+        //        {
+        //            AddReport(ReportType.Syntax, level, msg, fileName, lineNum + 1);
+        //        }
+        //        else // other error?
+        //        {
+        //            AddReport(ReportType.Internal, ReportLevel.Error, msg, fileName, lineNum + 1);
+        //        }
+        //        fatal |= (level == ReportLevel.Error);
+        //    }
+        //    if (fatal)
+        //    {
+        //        throw new ScriptException();
+        //    }
+        //}
 
         /// <summary>Parse one file. Recursive to support nested #:include fn.</summary>
         /// <param name="pcont">The parse context.</param>
@@ -465,23 +601,18 @@ namespace Ephemera.NScript
                             // Handle include now.
                             if (directive == "include")
                             {
-                                // Check for file existence.
-                                if (!File.Exists(dval))
+                                var incfn = RationalizeFileName(pcont.SourceFileName, dval);
+
+                                if (incfn is not null)
                                 {
-                                    if (ScriptPath is not null)
-                                    {
-                                        dval = Path.Combine(ScriptPath, dval);
-                                    }
-                                }
-                                if (!File.Exists(dval))
-                                {
-                                    valid = false;
+                                    // Recursive call to parse this file
+                                    ScriptFile subcont = new(incfn);
+                                    valid = PreprocessFile(subcont);
                                 }
                                 else
                                 {
-                                    // Recursive call to parse this file
-                                    ScriptFile subcont = new(dval);
-                                    valid = PreprocessFile(subcont);
+                                    AddReport(ReportType.Syntax, ReportLevel.Error, $"Invalid include ", pcont.SourceFileName, pcont.GetSourceLineNumber(sourceLineNumber));
+                                    throw new ScriptException();
                                 }
                             }
                             else
@@ -528,7 +659,7 @@ namespace Ephemera.NScript
         {
             string fn = pcont.SourceFileName;
             string origin = fn == "" ? "internal" : fn; // .\Game999.csx
-            string className = Path.GetFileNameWithoutExtension(origin);
+            string className = MakeClassName(origin);
 
             string baseClass = pcont.TopLevel ? $" : {BaseClassName}" : "";
 
@@ -585,6 +716,61 @@ namespace Ephemera.NScript
             };
 
             return resType == ReportLevel.Warning && IgnoreWarnings ? ReportLevel.None : resType;
+        }
+
+        /// <summary>Capture script errors.</summary>
+        /// <param name="type"></param>
+        /// <param name="level"></param>
+        /// <param name="msg"></param>
+        /// <param name="scriptFile"></param>
+        /// <param name="lineNum"></param>
+        protected void AddReport(ReportType type, ReportLevel level, string msg, string? scriptFile = null, int? lineNum = null)
+        {
+            if (level != ReportLevel.None)
+            {
+                if (scriptFile is not null)
+                {
+                    scriptFile = Path.GetFileName(scriptFile);
+                }
+
+                var rep = new Report()
+                {
+                    ReportType = type,
+                    Level = level,
+                    Message = msg,
+                    SourceFileName = scriptFile,
+                    SourceLineNumber = lineNum ?? -1
+                };
+                Reports.Add(rep);
+            }
+        }
+
+        /// <summary>
+        /// Determines absolute file name for an included file.
+        /// </summary>
+        /// <param name="scriptFileName">File with include directive</param>
+        /// <param name="includeFileName">Included file.</param>
+        /// <returns></returns>
+        string? RationalizeFileName(string scriptFileName, string includeFileName)
+        {
+            string? fn;
+
+            if (Path.IsPathFullyQualified(includeFileName)) // Explicit?
+            {
+                fn = includeFileName;
+            }
+            else // relative
+            {
+                var dir = Path.GetDirectoryName(scriptFileName);
+                fn = dir is null ? null : Path.Combine(dir, includeFileName);
+            }
+
+            // Check for file existence.
+            if (fn is not null)
+            {
+                fn = File.Exists(fn) ? fn : null;
+            }
+            return fn;
         }
         #endregion
     }

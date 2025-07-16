@@ -21,15 +21,15 @@ namespace Example
             // It's defined below, or could be in a separate file.
             GameCompiler compiler = new()
             {
-                ScriptPath = MiscUtils.GetSourcePath(), // where my scripts live
                 IgnoreWarnings = true,                  // to taste
                 Namespace = "Example.Script",           // same as ScriptCore.cs
                 BaseClassName = "ScriptCore",           // same as ScriptCore.cs
             };
 
             // Components of executable script.
-            var scriptFile = Path.Combine(compiler.ScriptPath, "Game999.csx");
-            var coreFile = Path.Combine(compiler.ScriptPath, "ScriptCore.cs");
+            var scriptPath = MiscUtils.GetSourcePath();
+            var scriptFile = Path.Combine(scriptPath, "Game999.csx");
+            var coreFile = Path.Combine(scriptPath, "ScriptCore.cs");
 
             // Run the compiler.
             compiler.CompileScript(scriptFile, [coreFile]);
@@ -37,8 +37,8 @@ namespace Example
             // What happened?
             if (compiler.CompiledScript is null)
             {
-                Console.WriteLine($"Compile failed:");
-                compiler.Reports.ForEach(rep => Console.WriteLine($"{rep}"));
+                Program.Print($"Compile failed:");
+                compiler.Reports.ForEach(rep => Program.Print($"{rep}"));
                 return 1;
             }
 
@@ -78,14 +78,14 @@ namespace Example
 
                 // Examine effects.
                 var ntime = GetRealTime();
-                Console.WriteLine($"Finished at {ntime}");
+                Program.Print($"Finished at {ntime}");
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Script runtime failed:");
+                Program.Print($"Script runtime failed:");
                 compiler.Reports.Clear();
                 compiler.ProcessRuntimeException(ex);
-                compiler.Reports.ForEach(rep => Console.WriteLine($"{rep}"));
+                compiler.Reports.ForEach(rep => Program.Print($"{rep}"));
                 return 2;
             }
 
@@ -101,9 +101,10 @@ namespace Example
         /// <see cref="CompilerCore"/>
         protected override void PreCompile()
         {
-            // Add other references.
-            LocalDlls = ["Ephemera.NScript"]; // the compiler
-            Usings.Add("Example.Script"); // script core Example.Script
+            // Add references.
+            SystemDlls = [ "System", "System.Private.CoreLib", "System.Runtime", "System.IO", "System.Collections", "System.Linq" ];
+            LocalDlls = [ "Ephemera.NScript", "Ephemera.NBagOfTricks" ];
+            Usings = [ "Example.Script" ];
         }
 
         /// <summary>Called after compiler finished.</summary>
@@ -113,7 +114,7 @@ namespace Example
             // Check for our app-specific directives.
             Directives
                 .Where(d => d.dirname == "kustom")
-                .ForEach(dk => Console.WriteLine($"Script has a {dk.dirval}!"));
+                .ForEach(dk => Program.Print($"Script has a {dk.dirval}!"));
         }
 
         /// <summary>Called for each line in the source file before compiling.</summary>
@@ -135,6 +136,7 @@ namespace Example
         #endregion
     }
 
+
     /// <summary>Example starts here.</summary>
     internal class Program
     {
@@ -146,10 +148,16 @@ namespace Example
             var ret = app.Run();
             if (ret > 0)
             {
-                Console.WriteLine($"App failed with {ret}");
+                Program.Print($"App failed with {ret}");
             }
 
             Environment.Exit(ret);
+        }
+
+        /// <summary>Tell the user something.</summary>
+        public static void Print(string msg)
+        {
+            Console.WriteLine($">>>: {msg}");
         }
     }
 }
