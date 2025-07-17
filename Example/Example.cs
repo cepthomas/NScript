@@ -7,16 +7,27 @@ using System.Reflection;
 using System.Threading.Tasks;
 using Ephemera.NBagOfTricks;
 using Ephemera.NScript;
+using Example.Script;
+
+
+
+// TODOX add example with separate script.csproj like neb and nproc.
 
 
 namespace Example
 {
     class Example
     {
-        /// <summary>This demonstrates how a host application loads and runs scripts.</summary>
+        /// <summary>This demonstrates how a host application:
+        /// - compiles a script
+        /// - loads the assembly into memory
+        /// - runs script using reflection
+        /// - runs script using direct invocation
+        /// </summary>
         /// <returns>Exit code: 0=ok 1=compiler or syntax error 2=runtime error</returns>
         public int Run()
         {
+            ////////////////// By reflection //////////////////
             // Compile script with application options. GameCompiler is this app-specific flavor.
             // It's defined below, or could be in a separate file.
             GameCompiler compiler = new()
@@ -28,10 +39,10 @@ namespace Example
 
             // Components of executable script.
             var scriptPath = MiscUtils.GetSourcePath();
-            var scriptFile = Path.Combine(scriptPath, "Game999.csx");
-            var coreFile = Path.Combine(scriptPath, "ScriptCore.cs");
+            var scriptFile = Path.Combine(scriptPath, "Script", "Game999.csx");
+            var coreFile = Path.Combine(scriptPath, "Script", "ScriptCore.cs");
 
-            // Run the compiler.
+            // Run the compiler. Add the script core file name.
             compiler.CompileScript(scriptFile, [coreFile]);
 
             // What happened?
@@ -89,6 +100,51 @@ namespace Example
                 return 2;
             }
 
+            ////////////////// By direct invocation //////////////////
+
+            // Add the known assembly.
+            compiler.LocalDlls.Add("Example.Script");
+
+            // Run the compiler. Note >>> coreFile is not included in build.
+            compiler.CompileScript(scriptFile, [coreFile]);
+
+            // What happened?
+            if (compiler.CompiledScript is null)
+            {
+                Program.Print($"Compile failed:");
+                compiler.Reports.ForEach(rep => Program.Print($"{rep}"));
+                return 1;
+            }
+
+            // OK here. Load and execute script. Needs exception handling to detect user runtime script errors.
+            try
+            {
+                // Cast to known.
+                var script = compiler.CompiledScript as ScriptCore;
+
+                // Run the game.
+                script.Init(Console.Out);
+                script.Setup("Here I am!!!", 60, 80);
+                script.RealTime = 500;
+
+                for (int i = 0; i < 10; i++)
+                {
+                    script.Move();
+                }
+
+                // Examine effects.
+                var ntime = script.RealTime;
+                Program.Print($"Finished at {ntime}");
+            }
+            catch (Exception ex)
+            {
+                Program.Print($"Script runtime failed:");
+                compiler.Reports.Clear();
+                compiler.ProcessRuntimeException(ex);
+                compiler.Reports.ForEach(rep => Program.Print($"{rep}"));
+                return 2;
+            }
+
             return 0;
         }
     }
@@ -102,9 +158,26 @@ namespace Example
         protected override void PreCompile()
         {
             // Add references.
-            SystemDlls = [ "System", "System.Private.CoreLib", "System.Runtime", "System.IO", "System.Collections", "System.Linq" ];
-            LocalDlls = [ "Ephemera.NScript", "Ephemera.NBagOfTricks" ];
-            Usings = [ "Example.Script" ];
+            SystemDlls =
+            [
+                "System",
+                "System.Private.CoreLib",
+                "System.Runtime",
+                "System.Collections",
+            ];
+
+            LocalDlls =
+            [
+                "Ephemera.NBagOfTricks",
+                "Ephemera.NScript",
+                //"Example.Script" add
+            ];
+
+            Usings =
+            [
+                "System.Collections.Generic",
+                "System.Text",
+            ];
         }
 
         /// <summary>Called after compiler finished.</summary>

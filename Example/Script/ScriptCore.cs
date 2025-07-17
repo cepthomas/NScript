@@ -74,8 +74,8 @@ namespace Example.Script
             {
                 int i = _rand.Next(0, _players.Count);
                 var player = _players.ToList()[i];
-                Print($"RandomPlayer: {player.Key}");
-                return player.Key;
+                Print($"RandomPlayer: {player}");
+                return player;
             }
             else
             {

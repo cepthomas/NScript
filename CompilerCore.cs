@@ -30,9 +30,6 @@ namespace Ephemera.NScript
         /// <summary>Client option.</summary>
         public bool IgnoreWarnings { get; set; } = false;
 
-        ///// <summary>Client may need to tell us this for #:include directive.</summary>
-        //public string? ScriptPath { get; set; }
-
         /// <summary>Script namespace.</summary>
         public string Namespace { get; set; } = "Anonymous";
 
@@ -44,22 +41,9 @@ namespace Ephemera.NScript
 
         /// <summary>Default system dlls. Client can add or subtract.</summary>
         public List<string> SystemDlls { get; set; } = [];
-        //[
-        //    "System",
-        //    "System.Private.CoreLib",
-        //    "System.Runtime",
-        //    "System.IO",    
-        //    "System.Collections",
-        //    "System.Linq"
-        //];
 
         /// <summary>Additional using statements not supplied by core dlls.</summary>
         public List<string> Usings { get; set; } = [];
-        //[
-        //    "System.Collections.Generic",
-        //    "System.Diagnostics",
-        //    "System.Text"
-        //];
 
         /// <summary>App dlls supplied by app compiler.</summary>
         public List<string> LocalDlls { get; set; } = [];
@@ -78,9 +62,6 @@ namespace Ephemera.NScript
         #endregion
 
         #region Fields
- //       /// <summary>Script info.</summary>
-//        string _scriptName = "???";
-
         /// <summary>Products of preprocess.</summary>
         readonly List<ScriptFile> _scriptFiles = [];
 
@@ -102,15 +83,6 @@ namespace Ephemera.NScript
         /// <returns>True if derived class took care of this</returns>
         protected virtual bool PreprocessLine(string sline, int lineNum, ScriptFile pcont) { return false; }
         #endregion
-
-        string MakeClassName(string fn)
-        {
-            // Get and sanitize the script name.
-            var fff = Path.GetFileNameWithoutExtension(fn);
-            StringBuilder sb = new();
-            fff.ForEach(c => sb.Append(char.IsLetterOrDigit(c) ? c : '_'));
-            return sb.ToString();
-        }
 
         #region Public functions
         /// <summary>Run the compiler on a script file.</summary>
@@ -141,10 +113,6 @@ namespace Ephemera.NScript
                 PreCompile();
 
                 // Get and sanitize the script name.
-                //_scriptName = Path.GetFileNameWithoutExtension(scriptFile);
-                //StringBuilder sb = new();
-                //_scriptName.ForEach(c => sb.Append(char.IsLetterOrDigit(c) ? c : '_'));
-                //_scriptName = sb.ToString();
                 scriptName = MakeClassName(scriptFile);
 
                 var dir = Path.GetDirectoryName(scriptFile);
@@ -163,16 +131,7 @@ namespace Ephemera.NScript
                 ScriptFile pcont = new(scriptFile) { TopLevel = true } ;
                 bool valid = PreprocessFile(pcont); // >>> recursive function
 
-                // Compile the processed files.
-                //Compile(dir!);
-
-                ///////////////////////////////////////////////////////
-                ///////////////////////////////////////////////////////
-                ///////////////////////////////////////////////////////
-
-
                 CompiledScript = null;
-
 
                 // Assemble constituents.
                 List<SyntaxTree> trees = [];
@@ -186,6 +145,7 @@ namespace Ephemera.NScript
                         // Create a file that can be placed in the pdb.
                         string fullpath = Path.Combine(tempDir, tocomp.GeneratedFileName);
                         File.WriteAllLines(fullpath, tocomp.GeneratedCode);
+
                         // Build a syntax tree.
                         string code = File.ReadAllText(fullpath, encoding);
                         CSharpParseOptions popts = new();
@@ -241,7 +201,6 @@ namespace Ephemera.NScript
 
                     foreach (Type t in types)
                     {
-                        //AddReport(ReportType.Internal, ReportLevel.Info, $"Type {t.Name}.");
                         if (t is not null && t.Name == scriptName)
                         {
                             // We have a good script file. Create the executable object.
@@ -295,17 +254,6 @@ namespace Ephemera.NScript
                 {
                     throw new ScriptException();
                 }
-
-
-
-
-
-
-                ///////////////////////////////////////////////////////
-                ///////////////////////////////////////////////////////
-                ///////////////////////////////////////////////////////
-
-
 
                 AddReport(ReportType.Internal, ReportLevel.Info, $"Compiled script: {(DateTime.Now - startTime).Milliseconds} msec.");
 
@@ -419,140 +367,6 @@ namespace Ephemera.NScript
         #endregion
 
         #region Private and protected functions
-        ///// <summary>The actual script compiler worker.</summary>
-        ///// <param name="baseDir">Fully qualified path to main script file dir.</param>
-        //void Compile(string baseDir)
-        //{
-        //    CompiledScript = null;
-
-        //    // Create temp output area and/or clean it.
-        //    var tempDir = TempDir ?? Path.Combine(baseDir, "temp");
-        //    Directory.CreateDirectory(tempDir);
-        //    Directory.GetFiles(tempDir).ForEach(f => File.Delete(f));
-
-        //    // Assemble constituents.
-        //    List<SyntaxTree> trees = [];
-        //    var encoding = Encoding.UTF8; // ASCII?
-
-        //    // Write the generated source files to temp build area.
-        //    foreach (var tocomp in _scriptFiles)
-        //    {
-        //        if (tocomp.GeneratedCode.Count > 0)
-        //        {
-        //            // Create a file that can be placed in the pdb.
-        //            string fullpath = Path.Combine(tempDir, tocomp.GeneratedFileName);
-        //            File.WriteAllLines(fullpath, tocomp.GeneratedCode);
-        //            // Build a syntax tree.
-        //            string code = File.ReadAllText(fullpath, encoding);
-        //            CSharpParseOptions popts = new();
-        //            SyntaxTree tree = CSharpSyntaxTree.ParseText(text: code, path: fullpath, options: popts, encoding: encoding);
-        //            trees.Add(tree);
-        //        }
-        //    }
-
-        //    // Plain files require simpler handling.
-        //    foreach (var fn in _plainFiles)
-        //    {
-        //        // Build a syntax tree.
-        //        string code = File.ReadAllText(fn, encoding);
-        //        CSharpParseOptions popts = new();
-        //        SyntaxTree tree = CSharpSyntaxTree.ParseText(text: code, path: fn, options: popts, encoding: encoding);
-        //        trees.Add(tree);
-        //    }
-
-        //    // References needed to compile the code.
-        //    var references = new List<MetadataReference>();
-
-        //    // System stuff location.
-        //    var dotnetStore = Path.GetDirectoryName(typeof(object).Assembly.Location);
-
-        //    // Project refs like nuget.
-        //    var localStore = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
-
-        //    // System dlls.
-        //    SystemDlls.ForEach(dll => references.Add(MetadataReference.CreateFromFile(Path.Combine(dotnetStore!, dll + ".dll"))));
-        //    // Had to add this for Enum per https://github.com/dotnet/roslyn/issues/50612
-        //    references.Add(MetadataReference.CreateFromFile(Assembly.Load("netstandard").Location));
-
-        //    // Local dlls.
-        //    LocalDlls.ForEach(dll => references.Add(MetadataReference.CreateFromFile(Path.Combine(localStore!, dll + ".dll"))));
-
-        //    // Emit the whole mess to streams.
-        //    using var ms = new MemoryStream();
-        //    using var pdbs = new MemoryStream();
-
-        //    var copts = new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary);
-        //    var emitOptions = new EmitOptions().
-        //        WithDebugInformationFormat(DebugInformationFormat.PortablePdb).
-        //        WithDefaultSourceFileEncoding(encoding);
-        //    var compilation = CSharpCompilation.Create($"{_scriptName}", trees, references, copts);
-
-        //    var result = compilation.Emit(peStream: ms, pdbStream: pdbs, options: emitOptions);
-
-        //    if (result.Success)
-        //    {
-        //        // Load into currently running assembly and locate the new script.
-        //        var assy = Assembly.Load(ms.ToArray(), pdbs.ToArray());
-        //        var types = assy.GetTypes();
-
-        //        foreach (Type t in types)
-        //        {
-        //            AddReport(ReportType.Internal, ReportLevel.Info, $"Type {t.Name}.");
-        //            if (t is not null && t.Name == _scriptName)
-        //            {
-        //                // We have a good script file. Create the executable object.
-        //                CompiledScript = Activator.CreateInstance(t);
-        //            }
-        //        }
-
-        //        if (CompiledScript is null)
-        //        {
-        //            AddReport(ReportType.Internal, ReportLevel.Error, $"Couldn't activate script {_scriptName}.");
-        //            throw new ScriptException(); // fatal
-        //        }
-        //    }
-
-        //    // Collect results.
-        //    bool fatal = false;
-        //    foreach (var diag in result.Diagnostics)
-        //    {
-        //        // Get the original context.
-        //        var fileName = diag.Location != Location.None ? diag.Location.SourceTree!.FilePath : "No File";
-        //        var lineNum = diag.Location != Location.None ? diag.Location.GetLineSpan().StartLinePosition.Line : -1; // 0-based
-        //        var msg = diag.GetMessage();
-        //        var level = Translate(diag.Severity);
-
-        //        var sfiles = _scriptFiles.Where(f => f.GeneratedFileName == Path.GetFileName(fileName));
-        //        if (sfiles.Any()) // It's a script file.
-        //        {
-        //            var sf = sfiles.First();
-        //            int srcLineNum = sf.GetSourceLineNumber(lineNum);
-
-        //            if (srcLineNum == -1) // something in user api or compiler, probably
-        //            {
-        //                AddReport(ReportType.Syntax, level, $"{msg} => {sf.GeneratedCode[lineNum]}", sf.SourceFileName, srcLineNum);
-        //            }
-        //            else // regular user error
-        //            {
-        //                AddReport(ReportType.Syntax, level, msg, sf.SourceFileName, srcLineNum);
-        //            }
-        //        }
-        //        else if (_plainFiles.Contains(fileName))
-        //        {
-        //            AddReport(ReportType.Syntax, level, msg, fileName, lineNum + 1);
-        //        }
-        //        else // other error?
-        //        {
-        //            AddReport(ReportType.Internal, ReportLevel.Error, msg, fileName, lineNum + 1);
-        //        }
-        //        fatal |= (level == ReportLevel.Error);
-        //    }
-        //    if (fatal)
-        //    {
-        //        throw new ScriptException();
-        //    }
-        //}
-
         /// <summary>Parse one file. Recursive to support nested #:include fn.</summary>
         /// <param name="pcont">The parse context.</param>
         /// <returns>True if a valid file.</returns>
@@ -678,7 +492,7 @@ namespace Ephemera.NScript
                  "",
                 $"namespace {Namespace}",
                  "{",
-                $"    public class {className}{baseClass}",
+                $"    public partial class {className}{baseClass}",
                  "    {",
             ]);
 
@@ -771,6 +585,18 @@ namespace Ephemera.NScript
                 fn = File.Exists(fn) ? fn : null;
             }
             return fn;
+        }
+
+        /// <summary>Make a safe/clean name from file name</summary>
+        /// <param name="fn"></param>
+        /// <returns></returns>
+        string MakeClassName(string fn)
+        {
+            // Get and sanitize the script name.
+            var fff = Path.GetFileNameWithoutExtension(fn);
+            StringBuilder sb = new();
+            fff.ForEach(c => sb.Append(char.IsLetterOrDigit(c) ? c : '_'));
+            return sb.ToString();
         }
         #endregion
     }

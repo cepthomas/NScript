@@ -1,0 +1,38 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project Sdk="Microsoft.NET.Sdk">
+    <PropertyGroup>
+
+        <TargetFramework>net8.0-windows</TargetFramework>
+        <RuntimeIdentifier>win-x64</RuntimeIdentifier>
+        <UseWindowsForms>true</UseWindowsForms>
+        <OutputPath>bin\</OutputPath>
+
+        <AssemblyName>Example.Script</AssemblyName>
+        <RootNamespace>Example.Script</RootNamespace>
+        <Version>2.0.0</Version>
+        <Description>Test script stuff</Description>
+        <Copyright>MIT License</Copyright>
+        <!-- <DefineConstants>DEBUG;TRACE</DefineConstants> -->
+        <WarningLevel>4</WarningLevel>
+        <NoWarn>CA1822;CA1069;CS1591</NoWarn>
+        <Nullable>enable</Nullable>
+        <GenerateDocumentationFile>true</GenerateDocumentationFile>
+        <SatelliteResourceLanguages>none</SatelliteResourceLanguages>
+
+    </PropertyGroup>
+
+    <ItemGroup><!-- <PackageReference Include="Microsoft.CodeAnalysis.CSharp" Version="4.14.0" /> -->
+        <!-- <PackageReference Include="System.Drawing.Common" Version="9.0.6" /> -->
+    
+      <Compile Remove="temp\**" />
+      <EmbeddedResource Remove="temp\**" />
+      <None Remove="temp\**" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <Reference Include="Ephemera.NBagOfTricks">
+            <HintPath>..\..\lib\Ephemera.NBagOfTricks.dll</HintPath>
+        </Reference>
+    </ItemGroup>
+    
+</Project>

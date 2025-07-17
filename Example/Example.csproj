@@ -24,28 +24,43 @@
     </PropertyGroup>
 
     <ItemGroup>
-      <Compile Remove="temp\**" />
-      <EmbeddedResource Remove="temp\**" />
-      <None Remove="temp\**" />
+      <Compile Remove="Script\**" />
+      <EmbeddedResource Remove="Script\**" />
+      <None Remove="Script\**" />
     </ItemGroup>
 
     <ItemGroup>
       <Compile Remove="Dev.cs" />
-      <Compile Remove="ScriptCore.cs" />
     </ItemGroup>
 
-    <ItemGroup>
+    <!-- <ItemGroup>
+      <Compile Remove="temp\**" />
+      <EmbeddedResource Remove="temp\**" />
+      <None Remove="temp\**" />
+    </ItemGroup> -->
+
+    <!-- <ItemGroup>
+      <Compile Remove="Dev.cs" />
+      <Compile Remove="ScriptCore.cs" />
+    </ItemGroup> -->
+
+    <!-- <ItemGroup>
       <AdditionalFiles Include="ScriptCore.cs" />
-    </ItemGroup>
+    </ItemGroup> -->
 
     <ItemGroup>
         <ProjectReference Include="..\NScript.csproj" />
+        <ProjectReference Include="Script\Script.csproj" />
     </ItemGroup>
 
     <ItemGroup>
         <Reference Include="Ephemera.NBagOfTricks">
           <HintPath>..\lib\Ephemera.NBagOfTricks.dll</HintPath>
         </Reference>
+    </ItemGroup>
+
+    <ItemGroup>
+      <Folder Include="NewFolder\" />
     </ItemGroup>
 
 </Project>
