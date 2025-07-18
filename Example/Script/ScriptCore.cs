@@ -24,7 +24,7 @@ namespace Example.Script
         TextWriter? _writeStream;
 
         /// <summary>All the players. Key is name.</summary>
-        protected Dictionary<string, Role> _players = [];
+        Dictionary<string, Role> _players = [];
 
         /// <summary>Board size.</summary>
         protected int _worldX = 50;
@@ -63,24 +63,30 @@ namespace Example.Script
         /// <summary>Make me a player.</summary>
         protected void CreatePlayer(Role role, string name)
         {
-            Print($"CreatePlayer({role}, {name}) -> _players[{_players.Count}]");
+            //Print($"CreatePlayer({role}, {name}) -> _players[{_players.Count}]");
             _players.Add(name, role);
         }
 
-        /// <summary>Roll the dice.</summary>
-        protected string RandomPlayer()
+        /// <summary>Roll the dice. Really crude but we aren't using linq.</summary>
+        protected string? RandomPlayer()
         {
-            if (_players.Count > 0)
-            {
-                int i = _rand.Next(0, _players.Count);
-                var player = _players.ToList()[i];
-                Print($"RandomPlayer: {player}");
-                return player;
-            }
-            else
-            {
-                return "";
-            }
+            int r = _rand.Next(0, _players.Count);
+            int i = 0;
+            foreach (var p in _players) { if (i++ == r) return p.Key; }
+            return null; // failed
+        }
+
+        /// <summary>What do they do?</summary>
+        protected Role? GetRole(string player)
+        {
+            if ( _players.ContainsKey(player)) { return _players[player]; }
+            return null;
+        }
+
+        /// <summary>Take them away.</summary>
+        protected void Remove(string player)
+        {
+            _players.Remove(player);
         }
 
         /// <summary>Tell the user something.</summary>

@@ -1,6 +1,5 @@
 
 // Preprocesser directives
-
 #:include Utils.csx
 #:kustom cheeseburger with onions
 #:directive_with_no_arg // for a test
@@ -37,18 +36,15 @@ public override int Move()
 
     var player = RandomPlayer();
 
-    if (player == "")
+    if (player is null)
     {
         Print($"No players left");
     }
-    else if (_players.ContainsKey(player))
-    {
-        Print($"Player killed: {player}:{_players[player]}");
-        _players.Remove(player);
-    }
     else
     {
-        Print($"This should never happen: {player}");
+        var role = GetRole(player);
+        Print($"Player killed: {player}. Alas, they were a good {role}");
+        Remove(player);
     }
 
     return 0;

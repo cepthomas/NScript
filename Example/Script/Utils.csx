@@ -5,13 +5,7 @@ int notavar = 911;
 
 public bool Boing(int which = 0)
 {
-    bool boinged = true;
-
-    if (which == 0)
-    {
-        which = 555;
-        boinged = true;
-    }
+    bool boinged = which % 3 == 0;
 
     return boinged;
 }

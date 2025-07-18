@@ -24,8 +24,11 @@
     </PropertyGroup>
 
     <ItemGroup>
+      <Compile Remove="NewFolder\**" />
       <Compile Remove="Script\**" />
+      <EmbeddedResource Remove="NewFolder\**" />
       <EmbeddedResource Remove="Script\**" />
+      <None Remove="NewFolder\**" />
       <None Remove="Script\**" />
     </ItemGroup>
 
@@ -57,10 +60,6 @@
         <Reference Include="Ephemera.NBagOfTricks">
           <HintPath>..\lib\Ephemera.NBagOfTricks.dll</HintPath>
         </Reference>
-    </ItemGroup>
-
-    <ItemGroup>
-      <Folder Include="NewFolder\" />
     </ItemGroup>
 
 </Project>

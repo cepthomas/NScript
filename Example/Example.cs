@@ -10,8 +10,11 @@ using Ephemera.NScript;
 using Example.Script;
 
 
-
-// TODOX add example with separate script.csproj like neb and nproc.
+// TODOX does this apply? https://carljohansen.wordpress.com/2020/05/09/compiling-expression-trees-with-roslyn-without-memory-leaks-2/
+// Not for the Example (run to completion then exit) but yes for long-running apps that reload externally modified scripts.
+// Assemblies, once loaded, cannot be unloaded until the process shuts down or the AssemblyLoadContext is unloaded.
+// In  .NET Framework there's no way to unload, but in .NET Core you can use an alternate AssemblyLoadContext which if provided
+// can be used to unload assemblies loaded in the context conditionally.
 
 
 namespace Example
@@ -22,27 +25,26 @@ namespace Example
         /// - compiles a script
         /// - loads the assembly into memory
         /// - runs script using reflection
-        /// - runs script using direct invocation
         /// </summary>
         /// <returns>Exit code: 0=ok 1=compiler or syntax error 2=runtime error</returns>
-        public int Run()
+        public int RunByReflection()
         {
-            ////////////////// By reflection //////////////////
-            // Compile script with application options. GameCompiler is this app-specific flavor.
-            // It's defined below, or could be in a separate file.
+            Program.Print($"===== Running Game1 by reflection =====");
+
             GameCompiler compiler = new()
             {
-                IgnoreWarnings = true,                  // to taste
-                Namespace = "Example.Script",           // same as ScriptCore.cs
-                BaseClassName = "ScriptCore",           // same as ScriptCore.cs
+                IgnoreWarnings = false,         // to taste
+                Namespace = "Example.Script",   // same as ScriptCore.cs
+                BaseClassName = "ScriptCore",   // same as ScriptCore.cs
             };
 
             // Components of executable script.
-            var scriptPath = MiscUtils.GetSourcePath();
-            var scriptFile = Path.Combine(scriptPath, "Script", "Game999.csx");
-            var coreFile = Path.Combine(scriptPath, "Script", "ScriptCore.cs");
+            var scriptFile = Path.Combine(MiscUtils.GetSourcePath(), "Script", "Game1.csx");
 
-            // Run the compiler. Add the script core file name.
+            // Add the core source file to the load:
+            var coreFile = Path.Combine(MiscUtils.GetSourcePath(), "Script", "ScriptCore.cs");
+
+            // Run the compiler.
             compiler.CompileScript(scriptFile, [coreFile]);
 
             // What happened?
@@ -53,43 +55,55 @@ namespace Example
                 return 1;
             }
 
-            // OK here. Load and execute script. Needs exception handling to detect user runtime script errors.
+            // Load and execute script. Exception handling to detect user runtime script errors.
             try
             {
                 // Init script.
                 var inst = compiler.CompiledScript;
                 var type = inst.GetType();
 
-                // Could use simple reflection methods:
-                // var miInit = type.GetMethod("Init");
-                // var miSetup = type.GetMethod("Setup");
-                // var miMove = type.GetMethod("Move");
-                // var piTime = type.GetProperty("RealTime");
+                // Could use simple reflection or delegates.
+                bool useDelegate = true;
 
-                // But delegates are better.
-                var Init = (Func<TextWriter, int>)Delegate.CreateDelegate(typeof(Func<TextWriter, int>), inst, type.GetMethod("Init")!);
-                var Setup = (Func<string, int, int, int>)Delegate.CreateDelegate(typeof(Func<string, int, int, int>), inst, type.GetMethod("Setup")!);
-                var Move = (Func<int>)Delegate.CreateDelegate(typeof(Func<int>), inst, type.GetMethod("Move")!);
-                var SetRealTime = (Action<double>)Delegate.CreateDelegate(typeof(Action<double>), inst, type.GetProperty("RealTime")!.GetSetMethod()!);
-                var GetRealTime = (Func<double>)Delegate.CreateDelegate(typeof(Func<double>), inst, type.GetProperty("RealTime")!.GetGetMethod()!);
-
-                // Run the game.
-                Init(Console.Out);
-                Setup("Here I am!!!", 60, 80);
-                SetRealTime(500);
-                // Using simple reflection:
-                //miInit!.Invoke(inst, [Console.Out]);
-                //miSetup!.Invoke(inst, ["Here I am!!!", 60, 80]);
-                //piTime!.SetValue(inst, 100.0);
-
-                for (int i = 0; i < 10; i++)
+                if (useDelegate)
                 {
-                    Move();
-                }
+                    var Init = (Func<TextWriter, int>)Delegate.CreateDelegate(typeof(Func<TextWriter, int>), inst, type.GetMethod("Init")!);
+                    var Setup = (Func<string, int, int, int>)Delegate.CreateDelegate(typeof(Func<string, int, int, int>), inst, type.GetMethod("Setup")!);
+                    var Move = (Func<int>)Delegate.CreateDelegate(typeof(Func<int>), inst, type.GetMethod("Move")!);
+                    var SetRealTime = (Action<double>)Delegate.CreateDelegate(typeof(Action<double>), inst, type.GetProperty("RealTime")!.GetSetMethod()!);
+                    var GetRealTime = (Func<double>)Delegate.CreateDelegate(typeof(Func<double>), inst, type.GetProperty("RealTime")!.GetGetMethod()!);
 
-                // Examine effects.
-                var ntime = GetRealTime();
-                Program.Print($"Finished at {ntime}");
+                    // Run the game.
+                    Init(Console.Out);
+                    Setup("Welcome to game 1 with delegates", 60, 80);
+                    SetRealTime(500);
+
+                    for (int i = 0; i < 10; i++)
+                    {
+                        Move();
+                    }
+
+                    Program.Print($"Finished at {GetRealTime()}");
+                }
+                else // simple reflection
+                {
+                    var miInit = type.GetMethod("Init");
+                    var miSetup = type.GetMethod("Setup");
+                    var miMove = type.GetMethod("Move");
+                    var piTime = type.GetProperty("RealTime");
+
+                    // Run the game.
+                    miInit!.Invoke(inst, [Console.Out]);
+                    miSetup!.Invoke(inst, ["Welcome to game 1 with invoke", 100, 200]);
+                    piTime!.SetValue(inst, 200.0);
+
+                    for (int i = 0; i < 10; i++)
+                    {
+                        miMove!.Invoke(inst, []);
+                    }
+
+                    Program.Print($"Finished at {piTime!.GetValue(inst)}");
+                }
             }
             catch (Exception ex)
             {
@@ -100,13 +114,34 @@ namespace Example
                 return 2;
             }
 
-            ////////////////// By direct invocation //////////////////
+            return 0;
+        }
+
+        /// <summary>This demonstrates how a host application:
+        /// - compiles a script
+        /// - loads the assembly into memory
+        /// - runs script using late binding
+        /// </summary>
+        /// <returns>Exit code: 0=ok 1=compiler or syntax error 2=runtime error</returns>
+        public int RunByBinding()
+        {
+            Program.Print($"===== Running Game2 by late binding =====");
+
+            GameCompiler compiler = new()
+            {
+                IgnoreWarnings = false,         // to taste
+                Namespace = "Example.Script",   // same as ScriptCore.cs
+                BaseClassName = "ScriptCore",   // same as ScriptCore.cs
+            };
+
+            // Components of executable script. Does not include ScriptCore.cs.
+            var scriptFile = Path.Combine(MiscUtils.GetSourcePath(), "Script", "Game2.csx");
 
             // Add the known assembly.
             compiler.LocalDlls.Add("Example.Script");
 
-            // Run the compiler. Note >>> coreFile is not included in build.
-            compiler.CompileScript(scriptFile, [coreFile]);
+            // Run the compiler.
+            compiler.CompileScript(scriptFile);
 
             // What happened?
             if (compiler.CompiledScript is null)
@@ -116,7 +151,7 @@ namespace Example
                 return 1;
             }
 
-            // OK here. Load and execute script. Needs exception handling to detect user runtime script errors.
+            // Load and execute script. Exception handling to detect user runtime script errors.
             try
             {
                 // Cast to known.
@@ -124,7 +159,7 @@ namespace Example
 
                 // Run the game.
                 script.Init(Console.Out);
-                script.Setup("Here I am!!!", 60, 80);
+                script.Setup("Welcome to game 2 with late binding", 55, 88);
                 script.RealTime = 500;
 
                 for (int i = 0; i < 10; i++)
@@ -132,9 +167,7 @@ namespace Example
                     script.Move();
                 }
 
-                // Examine effects.
-                var ntime = script.RealTime;
-                Program.Print($"Finished at {ntime}");
+                Program.Print($"Finished at {script.RealTime}");
             }
             catch (Exception ex)
             {
@@ -170,7 +203,6 @@ namespace Example
             [
                 "Ephemera.NBagOfTricks",
                 "Ephemera.NScript",
-                //"Example.Script" add
             ];
 
             Usings =
@@ -218,11 +250,18 @@ namespace Example
             //_ = Utils.WarmupRoslyn();
 
             var app = new Example();
-            var ret = app.Run();
+            var ret = app.RunByReflection();
+            //var ret = app.RunByBinding();
             if (ret > 0)
             {
-                Program.Print($"App failed with {ret}");
+                Console.WriteLine($"App failed with {ret}");
             }
+
+            //ret = app.RunByBinding();
+            //if (ret > 0)
+            //{
+            //    Console.WriteLine($"App failed with {ret}");
+            //}
 
             Environment.Exit(ret);
         }

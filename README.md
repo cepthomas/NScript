@@ -15,6 +15,30 @@ No dependencies on third-party components (except for my libraries in `\lib`).
 # The Files
 
 ```
+
+C:\DEV\LIBS\NSCRIPT
+|   Common.cs
+|   CompilerCore.cs
+|   NScript.csproj
+|   NScript.sln
+|   
++---Example
+|   |   Dev.cs
+|   |   Example.cs
+|   |   Example.csproj
+|   |                       
+|   \---Script
+|       |   Game1.csx
+|       |   Game2.csx
+|       |   Script.csproj
+|       |   ScriptCore.cs
+|       |   Utils.csx
+|       |               
++---lib
+|       Ephemera.NBagOfTricks.dll
+|       Ephemera.NBagOfTricks.xml
+
+
 NScript
 |   NScript.sln/csproj - creates the NScript library
 |   CompilerCore.cs - does most of the Roslyn work
