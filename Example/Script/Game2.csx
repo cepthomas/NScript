@@ -31,8 +31,6 @@ public override int Setup(string info, int worldX, int worldY)
 
 public override int Move()
 {
-    Print($"Move()");
-
     RealTime += 6.1;
 
     var player = RandomPlayer();
@@ -43,8 +41,9 @@ public override int Move()
     }
     else
     {
-        Print($"Player killed: {player}:{_players[player]}");
-        _players.Remove(player);
+        var role = GetRole(player);
+        Print($"Player killed: {player}. Yay, they were a terrible {role}");
+        Remove(player);
     }
 
     return 0;

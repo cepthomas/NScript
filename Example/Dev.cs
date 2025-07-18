@@ -9,6 +9,16 @@ using Ephemera.NScript;
 
 #pragma warning disable IDE0059 // Unnecessary assignment of a value
 
+
+TODOX does this apply? https://carljohansen.wordpress.com/2020/05/09/compiling-expression-trees-with-roslyn-without-memory-leaks-2/
+https://learn.microsoft.com/en-us/dotnet/standard/assembly/unloadability
+
+// Not for the Example (run to completion then exit) but yes for long-running apps that reload externally modified scripts.
+// Assemblies, once loaded, cannot be unloaded until the process shuts down or the AssemblyLoadContext is unloaded.
+// In  .NET Framework there's no way to unload, but in .NET Core you can use an alternate AssemblyLoadContext which if provided
+// can be used to unload assemblies loaded in the context conditionally.
+
+
 namespace Example
 {
     public class Dev //TODOX do something??

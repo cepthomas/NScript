@@ -10,13 +10,6 @@ using Ephemera.NScript;
 using Example.Script;
 
 
-// TODOX does this apply? https://carljohansen.wordpress.com/2020/05/09/compiling-expression-trees-with-roslyn-without-memory-leaks-2/
-// Not for the Example (run to completion then exit) but yes for long-running apps that reload externally modified scripts.
-// Assemblies, once loaded, cannot be unloaded until the process shuts down or the AssemblyLoadContext is unloaded.
-// In  .NET Framework there's no way to unload, but in .NET Core you can use an alternate AssemblyLoadContext which if provided
-// can be used to unload assemblies loaded in the context conditionally.
-
-
 namespace Example
 {
     class Example
@@ -38,10 +31,8 @@ namespace Example
                 BaseClassName = "ScriptCore",   // same as ScriptCore.cs
             };
 
-            // Components of executable script.
+            // Locate files of interest.
             var scriptFile = Path.Combine(MiscUtils.GetSourcePath(), "Script", "Game1.csx");
-
-            // Add the core source file to the load:
             var coreFile = Path.Combine(MiscUtils.GetSourcePath(), "Script", "ScriptCore.cs");
 
             // Run the compiler.
@@ -102,7 +93,7 @@ namespace Example
                         miMove!.Invoke(inst, []);
                     }
 
-                    Program.Print($"Finished at {piTime!.GetValue(inst)}");
+                    Program.Print($"Finished at fake time {piTime!.GetValue(inst)}");
                 }
             }
             catch (Exception ex)
@@ -134,11 +125,11 @@ namespace Example
                 BaseClassName = "ScriptCore",   // same as ScriptCore.cs
             };
 
-            // Components of executable script. Does not include ScriptCore.cs.
+            // Locate files of interest. Does not include ScriptCore.cs!
             var scriptFile = Path.Combine(MiscUtils.GetSourcePath(), "Script", "Game2.csx");
 
-            // Add the known assembly.
-            compiler.LocalDlls.Add("Example.Script");
+            // Add the known assemblies.
+            compiler.LocalDlls = ["Example.Script"];
 
             // Run the compiler.
             compiler.CompileScript(scriptFile);
@@ -167,7 +158,7 @@ namespace Example
                     script.Move();
                 }
 
-                Program.Print($"Finished at {script.RealTime}");
+                Program.Print($"Finished at fake time {script.RealTime}");
             }
             catch (Exception ex)
             {
@@ -191,25 +182,25 @@ namespace Example
         protected override void PreCompile()
         {
             // Add references.
-            SystemDlls =
+            SystemDlls.AddRange(
             [
                 "System",
                 "System.Private.CoreLib",
                 "System.Runtime",
                 "System.Collections",
-            ];
+            ]);
 
-            LocalDlls =
+            LocalDlls.AddRange(
             [
                 "Ephemera.NBagOfTricks",
                 "Ephemera.NScript",
-            ];
+            ]);
 
-            Usings =
+            Usings.AddRange(
             [
                 "System.Collections.Generic",
                 "System.Text",
-            ];
+            ]);
         }
 
         /// <summary>Called after compiler finished.</summary>
@@ -250,18 +241,20 @@ namespace Example
             //_ = Utils.WarmupRoslyn();
 
             var app = new Example();
-            var ret = app.RunByReflection();
+            var ret = -1;
+
+            ret = app.RunByReflection();
             //var ret = app.RunByBinding();
             if (ret > 0)
             {
-                Console.WriteLine($"App failed with {ret}");
+                Console.WriteLine($"!!! App failed with {ret}");
             }
 
-            //ret = app.RunByBinding();
-            //if (ret > 0)
-            //{
-            //    Console.WriteLine($"App failed with {ret}");
-            //}
+            ret = app.RunByBinding();
+            if (ret > 0)
+            {
+                Console.WriteLine($"!!! App failed with {ret}");
+            }
 
             Environment.Exit(ret);
         }
@@ -269,7 +262,7 @@ namespace Example
         /// <summary>Tell the user something.</summary>
         public static void Print(string msg)
         {
-            Console.WriteLine($">>>: {msg}");
+            Console.WriteLine($">>> {msg}");
         }
     }
 }

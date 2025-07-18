@@ -30,8 +30,6 @@ public override int Setup(string info, int worldX, int worldY)
 
 public override int Move()
 {
-    Print($"Move()");
-
     RealTime += 5;
 
     var player = RandomPlayer();
