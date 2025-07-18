@@ -124,12 +124,12 @@ namespace Example
                 Namespace = "Example.Script",   // same as ScriptCore.cs
                 BaseClassName = "ScriptCore",   // same as ScriptCore.cs
             };
+            // Add the known assemblies.
+            compiler.LocalDlls.Add("Example.Script");
 
             // Locate files of interest. Does not include ScriptCore.cs!
             var scriptFile = Path.Combine(MiscUtils.GetSourcePath(), "Script", "Game2.csx");
 
-            // Add the known assemblies.
-            compiler.LocalDlls = ["Example.Script"];
 
             // Run the compiler.
             compiler.CompileScript(scriptFile);
@@ -176,32 +176,18 @@ namespace Example
     /// <summary>The compiler specific to the application.</summary>
     class GameCompiler : CompilerCore
     {
+        public GameCompiler()
+        {
+            // Add references.
+            SystemDlls = ["System", "System.Private.CoreLib", "System.Runtime", "System.Collections"];
+            LocalDlls = ["Ephemera.NBagOfTricks", "Ephemera.NScript"];
+            Usings = ["System.Collections.Generic", "System.Text"];
+        }
+
         #region Compiler override options
         /// <summary>Called before compiler starts.</summary>
         /// <see cref="CompilerCore"/>
-        protected override void PreCompile()
-        {
-            // Add references.
-            SystemDlls.AddRange(
-            [
-                "System",
-                "System.Private.CoreLib",
-                "System.Runtime",
-                "System.Collections",
-            ]);
-
-            LocalDlls.AddRange(
-            [
-                "Ephemera.NBagOfTricks",
-                "Ephemera.NScript",
-            ]);
-
-            Usings.AddRange(
-            [
-                "System.Collections.Generic",
-                "System.Text",
-            ]);
-        }
+        protected override void PreCompile() { }
 
         /// <summary>Called after compiler finished.</summary>
         /// <see cref="CompilerCore"/>
@@ -240,11 +226,15 @@ namespace Example
         {
             //_ = Utils.WarmupRoslyn();
 
+            //var dev = new Dev();
+            ////dev.Explore();
+            //dev.AssemblyPlay();
+            //Environment.Exit(0);
+
             var app = new Example();
             var ret = -1;
 
             ret = app.RunByReflection();
-            //var ret = app.RunByBinding();
             if (ret > 0)
             {
                 Console.WriteLine($"!!! App failed with {ret}");

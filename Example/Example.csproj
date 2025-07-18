@@ -24,32 +24,10 @@
     </PropertyGroup>
 
     <ItemGroup>
-      <Compile Remove="NewFolder\**" />
       <Compile Remove="Script\**" />
-      <EmbeddedResource Remove="NewFolder\**" />
       <EmbeddedResource Remove="Script\**" />
-      <None Remove="NewFolder\**" />
       <None Remove="Script\**" />
     </ItemGroup>
-
-    <ItemGroup>
-      <Compile Remove="Dev.cs" />
-    </ItemGroup>
-
-    <!-- <ItemGroup>
-      <Compile Remove="temp\**" />
-      <EmbeddedResource Remove="temp\**" />
-      <None Remove="temp\**" />
-    </ItemGroup> -->
-
-    <!-- <ItemGroup>
-      <Compile Remove="Dev.cs" />
-      <Compile Remove="ScriptCore.cs" />
-    </ItemGroup> -->
-
-    <!-- <ItemGroup>
-      <AdditionalFiles Include="ScriptCore.cs" />
-    </ItemGroup> -->
 
     <ItemGroup>
         <ProjectReference Include="..\NScript.csproj" />

@@ -267,7 +267,7 @@ namespace Ephemera.NScript
         }
 
         /// <summary>
-        /// Run the compiler on a simple text block.
+        /// Run the compiler on a simple text block. Uses Namespace for dll.
         /// </summary>
         /// <param name="text">Text to compile.</param>
         /// <returns>The assembly or null if invalid.</returns>
@@ -287,7 +287,7 @@ namespace Ephemera.NScript
             // Emit to stream.
             using var ms = new MemoryStream();
             var copts = new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary);
-            var compilation = CSharpCompilation.Create($"SimpleText.dll", [tree], references, copts);
+            var compilation = CSharpCompilation.Create($"{Namespace}.dll", [tree], references, copts);
             EmitResult result = compilation.Emit(ms);
 
             if (result.Success)

@@ -10,32 +10,13 @@ using Ephemera.NScript;
 #pragma warning disable IDE0059 // Unnecessary assignment of a value
 
 
-TODOX does this apply? https://carljohansen.wordpress.com/2020/05/09/compiling-expression-trees-with-roslyn-without-memory-leaks-2/
-https://learn.microsoft.com/en-us/dotnet/standard/assembly/unloadability
-
-// Not for the Example (run to completion then exit) but yes for long-running apps that reload externally modified scripts.
-// Assemblies, once loaded, cannot be unloaded until the process shuts down or the AssemblyLoadContext is unloaded.
-// In  .NET Framework there's no way to unload, but in .NET Core you can use an alternate AssemblyLoadContext which if provided
-// can be used to unload assemblies loaded in the context conditionally.
-
-
 namespace Example
 {
-    public class Dev //TODOX do something??
-    {
-        /// <summary>Used to investigate reflection options.</summary>
-        /// <returns></returns>
-        public void Explore()
-        {
-            ///// Compile script with application options.
-            GameCompiler compiler = new()
-            {
-                ScriptPath = ".",
-                IgnoreWarnings = true,
-                Namespace = "DontCare"
-            };
+    class DevCompiler : CompilerCore { }
 
-            string code = @"
+    public class Dev
+    {
+        string code = @"
             using System;
             namespace DontCare
             {
@@ -46,6 +27,45 @@ namespace Example
                     public int Dev(string s) { iii = s.Length; RealTime++; return iii; }
                 }
             }";
+
+        public void AssemblyPlay()
+        {
+            //TODOX https://learn.microsoft.com/en-us/dotnet/standard/assembly/unloadability
+            //https://carljohansen.wordpress.com/2020/05/09/compiling-expression-trees-with-roslyn-without-memory-leaks-2/
+            // Not for the Example (run to completion then exit) but yes for long-running apps that reload externally modified scripts.
+            // Assemblies, once loaded, cannot be unloaded until the process shuts down or the AssemblyLoadContext is unloaded.
+            // In  .NET Framework there's no way to unload, but in .NET Core you can use an alternate AssemblyLoadContext which if provided
+            // can be used to unload assemblies loaded in the context conditionally.
+
+            var assys = AppDomain.CurrentDomain.GetAssemblies();
+
+            DevCompiler compiler = new()
+            {
+                IgnoreWarnings = true,
+                Namespace = "DontCare",
+                SystemDlls = ["System", "System.Private.CoreLib", "System.Runtime", "System.Collections"],
+                //LocalDlls = ["Ephemera.NBagOfTricks", "Ephemera.NScript"],
+                Usings = ["System.Collections.Generic", "System.Text"]
+            };
+
+            var assy = compiler.CompileText(code);
+
+            assys = AppDomain.CurrentDomain.GetAssemblies();
+
+            assy = compiler.CompileText(code);
+            assys = AppDomain.CurrentDomain.GetAssemblies();
+        }
+
+        /// <summary>Investigate reflection options.</summary>
+        /// <returns></returns>
+        public void Explore()
+        {
+            ///// Compile script with application options.
+            GameCompiler compiler = new()
+            {
+                IgnoreWarnings = true,
+                Namespace = "DontCare"
+            };
 
             var assy = compiler.CompileText(code);
             object? inst = null;

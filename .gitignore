@@ -416,5 +416,6 @@ FodyWeavers.xsd
 *.msix
 *.msm
 *.msp
-/Test/temp
-/Example/temp
+
+# App ignores
+/Example/Script/temp

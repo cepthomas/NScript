@@ -4,6 +4,11 @@ A script engine for embedding in .NET apps.
 Compiles C#-like scripts into in-memory assemblies using Roslyn. Scripts do not use namespace or class
 name declarations.
 
+The Example directory demonstrates the use. There are two forms:
+
+- Using simple reflection with direct Invoke() and delegates.
+- Direct invocation of an abstract base class.
+
 Used by [Nebulator](https://github.com/cepthomas/Nebulator/blob/main/README.md)
 and [NProcessing](https://github.com/cepthomas/NProcessing/blob/main/README.md).
 
@@ -15,40 +20,23 @@ No dependencies on third-party components (except for my libraries in `\lib`).
 # The Files
 
 ```
-
-C:\DEV\LIBS\NSCRIPT
-|   Common.cs
-|   CompilerCore.cs
-|   NScript.csproj
-|   NScript.sln
-|   
-+---Example
-|   |   Dev.cs
-|   |   Example.cs
-|   |   Example.csproj
-|   |                       
-|   \---Script
-|       |   Game1.csx
-|       |   Game2.csx
-|       |   Script.csproj
-|       |   ScriptCore.cs
-|       |   Utils.csx
-|       |               
-+---lib
-|       Ephemera.NBagOfTricks.dll
-|       Ephemera.NBagOfTricks.xml
-
-
 NScript
 |   NScript.sln/csproj - creates the NScript library
 |   CompilerCore.cs - does most of the Roslyn work
 |   Common.cs - mainly used by CompilerCore.cs
-\---Example
-        Example.csproj - builds the example app using NScript library
-        Example.cs - compile-time and run-time parts of the example app
-        ScriptCore.cs - run-time services and utilities for the script - *not* built by Example.csproj
-        Game999.csx - top-level script - extension can be whatever you want
-        Utils.csx - included by above
+|   
++---Example
+|   |   Dev.cs - development play area
+    |   Example.csproj - builds the example app using NScript library
+    |   Example.cs - compile-time and run-time parts of the example app
+    |                       
+    \---Script
+            Script.csproj - creates the base assembly
+            ScriptCore.cs - run-time services and utilities for the script
+            Game1.csx - top-level script for reflection style
+            Game2.csx - top-level script for bound style
+            Utils.csx - included by above
+                        
 ```
 
 
