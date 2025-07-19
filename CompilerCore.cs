@@ -11,6 +11,7 @@ using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.Emit;
 using Microsoft.CodeAnalysis.Text;
 using Ephemera.NBagOfTricks;
+using System.Runtime.Loader;
 
 
 
@@ -208,7 +209,7 @@ namespace Ephemera.NScript
                     }
                 }
 
-                // Collect results.
+                // Collect results. Sift through for errors and/or warnings.
                 bool fatal = false;
                 foreach (var diag in result.Diagnostics)
                 {
@@ -267,7 +268,7 @@ namespace Ephemera.NScript
         }
 
         /// <summary>
-        /// Run the compiler on a simple text block. Uses Namespace for dll.
+        /// Run the compiler on a simple text block. Uses Namespace for dll name.
         /// </summary>
         /// <param name="text">Text to compile.</param>
         /// <returns>The assembly or null if invalid.</returns>
@@ -289,6 +290,7 @@ namespace Ephemera.NScript
             var copts = new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary);
             var compilation = CSharpCompilation.Create($"{Namespace}.dll", [tree], references, copts);
             EmitResult result = compilation.Emit(ms);
+            //EmitResult result2 = compilation.Emit("_xxxxxx.dll");
 
             if (result.Success)
             {
