@@ -20,6 +20,9 @@ namespace Ephemera.NScript
 
     public enum ReportLevel { None, Info, Warning, Error }
 
+    /// <summary>Reporting hard errors.</summary>
+    internal class ScriptException() : Exception() { }
+
     /// <summary>General script result container.</summary>
     public class Report()
     {
@@ -47,7 +50,7 @@ namespace Ephemera.NScript
                 ReportLevel.Info => "INF",
                 ReportLevel.Warning => "WRN",
                 ReportLevel.Error => "ERR",
-                _ => throw new NotImplementedException()
+                _ => "???"
             };
 
             StringBuilder sb = new($"{slevel} {ReportType}: ");
@@ -88,9 +91,6 @@ namespace Ephemera.NScript
             return ln;
         }
     }
-
-    /// <summary>Reporting hard errors.</summary>
-    public class ScriptException() : Exception() { }
 
     public class Utils
     {
