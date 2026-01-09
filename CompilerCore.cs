@@ -24,23 +24,23 @@ namespace Ephemera.NScript
         /// <summary>Client option.</summary>
         public bool IgnoreWarnings { get; set; } = false;
 
-        /// <summary>Script namespace.</summary>
+        /// <summary>Script namespace to use for generated classes.</summary>
         public string Namespace { get; set; } = "Anonymous";
 
-        /// <summary>Base class.</summary>
+        /// <summary>Base class to use for generated classes..</summary>
         public string BaseClassName { get; set; } = "GenericClass";
 
-        /// <summary>Client may weant to tell us to use this for temp files.</summary>
+        /// <summary>Client may want to define this for temp files.</summary>
         public string? TempDir { get; set; }
 
-        /// <summary>Default system dlls. Client can add or subtract.</summary>
+        /// <summary>Specify system dlls.</summary>
         public List<string> SystemDlls { get; set; } = [];
+
+        /// <summary>Specify application dlls.</summary>
+        public List<string> LocalDlls { get; set; } = [];
 
         /// <summary>Additional using statements not supplied by core dlls.</summary>
         public List<string> Usings { get; set; } = [];
-
-        /// <summary>App dlls supplied by app compiler.</summary>
-        public List<string> LocalDlls { get; set; } = [];
 
         /// <summary>The final compiled script.</summary>
         public object? CompiledScript { get; set; } = null;
@@ -473,8 +473,8 @@ namespace Ephemera.NScript
             string fn = pcont.SourceFileName;
             string origin = fn == "" ? "internal" : fn; // .\Game999.csx
             string className = MakeClassName(origin);
-
-            string baseClass = pcont.TopLevel ? $" : {BaseClassName}" : "";
+            string baseClass = $" : {BaseClassName}";
+            //string baseClass = pcont.TopLevel ? $" : {BaseClassName}" : ""; TODO Just main file?
 
             // Create the common contents. Like  public class Game999 : ScriptCore
             List<string> codeLines =
@@ -491,7 +491,8 @@ namespace Ephemera.NScript
                  "",
                 $"namespace {Namespace}",
                  "{",
-                $"    public partial class {className}{baseClass}",
+                $"    public class {className}{baseClass}",
+                //$"    public partial class {className}{baseClass}", // was partial
                  "    {",
             ]);
 
