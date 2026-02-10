@@ -27,10 +27,9 @@ namespace Example
 
             /////////////////////////////////////////////////////
             var app = new Example();
-            var ret = -1;
 
             /////////////////////////////////////////////////////
-            ret = app.RunByReflection();
+            var ret = app.RunByReflection();
             if (ret > 0)
             {
                 Console.WriteLine($"!!! App failed with {ret}");
