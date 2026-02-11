@@ -9,7 +9,7 @@ using System.IO;
 
 namespace Example.Script
 {
-    public class ScriptCore
+    public class Api
     {
         #region Types
         /// <summary>Player roles.</summary>
@@ -24,7 +24,7 @@ namespace Example.Script
         TextWriter? _writeStream;
 
         /// <summary>All the players. Key is name.</summary>
-        Dictionary<string, Role> _players = [];
+        readonly Dictionary<string, Role> _players = [];
 
         /// <summary>Board size.</summary>
         protected int _worldX = 50;
@@ -79,7 +79,7 @@ namespace Example.Script
         /// <summary>What do they do?</summary>
         protected Role? GetRole(string player)
         {
-            if ( _players.ContainsKey(player)) { return _players[player]; }
+            if ( _players.TryGetValue(player, out Role value)) { return value; }
             return null;
         }
 

@@ -17,25 +17,14 @@ namespace Example
     {
         static void Main()
         {
-            //_ = Utils.WarmupRoslyn();
-
-            /////////////////////////////////////////////////////
-            //var dev = new Dev();
-            ////dev.ReflectionPlay();
-            //dev.AssemblyPlay();
-            //Environment.Exit(0);
-
-            /////////////////////////////////////////////////////
             var app = new Example();
 
-            /////////////////////////////////////////////////////
             var ret = app.RunByReflection();
             if (ret > 0)
             {
                 Console.WriteLine($"!!! App failed with {ret}");
             }
 
-            /////////////////////////////////////////////////////
             ret = app.RunByBinding();
             if (ret > 0)
             {
@@ -43,12 +32,6 @@ namespace Example
             }
 
             Environment.Exit(ret);
-        }
-
-        /// <summary>Tell the user something.</summary>
-        public static void Print(string msg)
-        {
-            Console.WriteLine($">>> {msg}");
         }
     }
 }

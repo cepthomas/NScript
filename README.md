@@ -32,7 +32,7 @@ NScript
     |
     \---Script
             Script.csproj - creates the base assembly
-            ScriptCore.cs - run-time services and utilities for the script
+            Api.cs - run-time services and utilities for the script
             Game1.csx - script for reflection style
             Game2.csx - script for bound style
             Utils.csx - included by above

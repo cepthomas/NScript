@@ -22,27 +22,27 @@ namespace Example
         /// <returns>Exit code: 0=ok 1=compiler or syntax error 2=runtime error</returns>
         public int RunByReflection()
         {
-            Program.Print($"===== Running Game1 by reflection =====");
+            Print($"===== Running Game1 by reflection =====");
 
             GameCompiler compiler = new()
             {
                 IgnoreWarnings = false,         // to taste
-                Namespace = "Example.Script",   // same as ScriptCore.cs
-                BaseClassName = "ScriptCore",   // same as ScriptCore.cs
+                Namespace = "Example.Script",   // same as Api.cs
+                BaseClassName = "Api",          // same as Api.cs
             };
 
             // Locate files of interest.
             var scriptFile = Path.Combine(MiscUtils.GetSourcePath(), "Script", "Game1.csx");
-            var coreFile = Path.Combine(MiscUtils.GetSourcePath(), "Script", "ScriptCore.cs");
+            var apiFile = Path.Combine(MiscUtils.GetSourcePath(), "Script", "Api.cs");
 
             // Run the compiler.
-            compiler.CompileScript(scriptFile, [coreFile]);
+            compiler.CompileScript(scriptFile, [apiFile]);
 
             // What happened?
             if (compiler.CompiledScript is null)
             {
-                Program.Print($"Compile failed:");
-                compiler.Reports.ForEach(rep => Program.Print($"{rep}"));
+                Print($"Compile failed:");
+                compiler.Reports.ForEach(rep => Print($"{rep}"));
                 return 1;
             }
 
@@ -74,7 +74,7 @@ namespace Example
                         Move();
                     }
 
-                    Program.Print($"Finished at {GetRealTime()}");
+                    Print($"Finished at {GetRealTime()}");
                 }
                 else // simple reflection
                 {
@@ -93,15 +93,15 @@ namespace Example
                         miMove!.Invoke(inst, []);
                     }
 
-                    Program.Print($"Finished at fake time {piTime!.GetValue(inst)}");
+                    Print($"Finished at fake time {piTime!.GetValue(inst)}");
                 }
             }
             catch (Exception ex)
             {
-                Program.Print($"Script runtime failed:");
+                Print($"Script runtime failed:");
                 compiler.Reports.Clear();
                 compiler.ProcessRuntimeException(ex);
-                compiler.Reports.ForEach(rep => Program.Print($"{rep}"));
+                compiler.Reports.ForEach(rep => Print($"{rep}"));
                 return 2;
             }
 
@@ -116,18 +116,18 @@ namespace Example
         /// <returns>Exit code: 0=ok 1=compiler or syntax error 2=runtime error</returns>
         public int RunByBinding()
         {
-            Program.Print($"===== Running Game2 by late binding =====");
+            Print($"===== Running Game2 by late binding =====");
 
             GameCompiler compiler = new()
             {
                 IgnoreWarnings = false,         // to taste
-                Namespace = "Example.Script",   // same as ScriptCore.cs
-                BaseClassName = "ScriptCore",   // same as ScriptCore.cs
+                Namespace = "Example.Script",   // same as Api.cs
+                BaseClassName = "Api",          // same as Api.cs
             };
             // Add the known assemblies.
             compiler.LocalDlls.Add("Example.Script");
 
-            // Locate files of interest. Does not include ScriptCore.cs!
+            // Locate files of interest. Does not include Api.cs!
             var scriptFile = Path.Combine(MiscUtils.GetSourcePath(), "Script", "Game2.csx");
 
 
@@ -137,8 +137,8 @@ namespace Example
             // What happened?
             if (compiler.CompiledScript is null)
             {
-                Program.Print($"Compile failed:");
-                compiler.Reports.ForEach(rep => Program.Print($"{rep}"));
+                Print($"Compile failed:");
+                compiler.Reports.ForEach(rep => Print($"{rep}"));
                 return 1;
             }
 
@@ -146,7 +146,7 @@ namespace Example
             try
             {
                 // Cast to known.
-                var script = compiler.CompiledScript as ScriptCore;
+                var script = compiler.CompiledScript as Api;
 
                 // Run the game.
                 script.Init(Console.Out);
@@ -158,18 +158,24 @@ namespace Example
                     script.Move();
                 }
 
-                Program.Print($"Finished at fake time {script.RealTime}");
+                Print($"Finished at fake time {script.RealTime}");
             }
             catch (Exception ex)
             {
-                Program.Print($"Script runtime failed:");
+                Print($"Script runtime failed:");
                 compiler.Reports.Clear();
                 compiler.ProcessRuntimeException(ex);
-                compiler.Reports.ForEach(rep => Program.Print($"{rep}"));
+                compiler.Reports.ForEach(rep => Print($"{rep}"));
                 return 2;
             }
 
             return 0;
+        }
+
+        /// <summary>Tell the user something.</summary>
+        void Print(string msg)
+        {
+            Console.WriteLine($">>> {msg}");
         }
     }
 
@@ -196,7 +202,7 @@ namespace Example
             // Check for our app-specific directives.
             Directives
                 .Where(d => d.dirname == "kustom")
-                .ForEach(dk => Program.Print($"Script has a {dk.dirval}!"));
+                .ForEach(dk => Console.WriteLine($"Script has a {dk.dirval}!"));
         }
 
         /// <summary>Called for each line in the source file before compiling.</summary>

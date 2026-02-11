@@ -376,7 +376,6 @@ namespace Ephemera.NScript
             if (valid)
             {
                 pcont.GeneratedFileName = $"{Path.GetFileNameWithoutExtension(pcont.SourceFileName)}_generated.cs";
-                // pcont.GeneratedFileName = $"{_scriptName}_src{_scriptFiles.Count}.cs".ToLower();
                 _scriptFiles.Add(pcont);
 
                 // Preamble.
@@ -394,7 +393,7 @@ namespace Ephemera.NScript
                     string cline = pos >= 0 ? s.Left(pos) : s;
 
                     // Tidy up.
-                    string strim = s.Trim();
+                    string strim = cline.Trim();
 
                     // Test for app preprocessor directives like #:include path\utils.neb.
                     if (strim.StartsWith("#:"))
@@ -414,7 +413,7 @@ namespace Ephemera.NScript
                             // Handle include now.
                             if (directive == "include")
                             {
-                                var incfn = RationalizeFileName(pcont.SourceFileName, dval);
+                                var incfn = MiscUtils.RationalizeFileName(dval, Path.GetDirectoryName(pcont.SourceFileName));
 
                                 if (incfn is not null)
                                 {
@@ -476,7 +475,7 @@ namespace Ephemera.NScript
             string baseClass = $" : {BaseClassName}";
             //string baseClass = pcont.TopLevel ? $" : {BaseClassName}" : ""; TODO Just main file?
 
-            // Create the common contents. Like  public class Game999 : ScriptCore
+            // Create the common contents. Like  public class Game999 : Api
             List<string> codeLines =
             [
                 $"// Created from {origin} {DateTime.Now}",
@@ -557,34 +556,6 @@ namespace Ephemera.NScript
                 };
                 Reports.Add(rep);
             }
-        }
-
-        /// <summary>
-        /// Determines absolute file name for an included file.
-        /// </summary>
-        /// <param name="scriptFileName">File with include directive</param>
-        /// <param name="includeFileName">Included file.</param>
-        /// <returns></returns>
-        string? RationalizeFileName(string scriptFileName, string includeFileName)
-        {
-            string? fn;
-
-            if (Path.IsPathFullyQualified(includeFileName)) // Explicit?
-            {
-                fn = includeFileName;
-            }
-            else // relative
-            {
-                var dir = Path.GetDirectoryName(scriptFileName);
-                fn = dir is null ? null : Path.Combine(dir, includeFileName);
-            }
-
-            // Check for file existence.
-            if (fn is not null)
-            {
-                fn = File.Exists(fn) ? fn : null;
-            }
-            return fn;
         }
 
         /// <summary>Make a safe/clean name from file name</summary>

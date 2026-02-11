@@ -10,8 +10,6 @@ using System.Threading.Tasks;
 using Ephemera.NBagOfTricks;
 using Ephemera.NScript;
 
-#pragma warning disable IDE0059 // Unnecessary assignment of a value
-
 
 namespace Example
 {
@@ -37,7 +35,7 @@ namespace Example
 
     public class Dev
     {
-        string code = @"
+        readonly string code = @"
             using System;
             namespace DontCare
             {
@@ -76,7 +74,7 @@ namespace Example
             {
                 var assys = AppDomain.CurrentDomain.GetAssemblies();
                 var num = assys.Where(a => a.FullName.Contains(compiler.Namespace)).Count();
-                Program.Print($"{info}:{num}");
+                Console.WriteLine($"{info}:{num}");
             }
         }
 
@@ -140,8 +138,7 @@ namespace Example
             }
 
             // Now you can run this function to load, execute, and unload the assembly.
-            WeakReference testAlcWeakRef;
-            ExecuteAndUnload("absolute/path/to/your/assembly", out testAlcWeakRef);
+            ExecuteAndUnload("absolute/path/to/your/assembly", out WeakReference testAlcWeakRef);
 
             // However, the unload doesn't complete immediately. As previously mentioned, it relies on the garbage collector to collect all the objects from the test assembly. In many cases, it isn't necessary to wait for the unload completion. However, there are cases where it's useful to know that the unload has finished. For example, you might want to delete the assembly file that was loaded into the custom AssemblyLoadContext from disk. In such a case, the following code snippet can be used. It triggers garbage collection and waits for pending finalizers in a loop until the weak reference to the custom AssemblyLoadContext is set to null, indicating the target object was collected. In most cases, just one pass through the loop is required. However, for more complex cases where objects created by the code running in the AssemblyLoadContext have finalizers, more passes might be needed.
             for (int i = 0; testAlcWeakRef.IsAlive && (i < 10); i++)
