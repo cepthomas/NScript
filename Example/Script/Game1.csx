@@ -1,5 +1,5 @@
 
-// Preprocesser directives  TODO1 also . and .. in:
+// Preprocesser directives
 #:include .\Utils.csx // ok?
 #:kustom cheeseburger with onions
 #:directive_with_no_arg // for a test
