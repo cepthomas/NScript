@@ -73,7 +73,7 @@ namespace Example
             void HowMany(string info)
             {
                 var assys = AppDomain.CurrentDomain.GetAssemblies();
-                var num = assys.Where(a => a.FullName.Contains(compiler.Namespace)).Count();
+                var num = assys.Where(a => a.FullName!.Contains(compiler.Namespace)).Count();
                 Console.WriteLine($"{info}:{num}");
             }
         }

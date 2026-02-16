@@ -149,7 +149,7 @@ namespace Example
                 var script = compiler.CompiledScript as Api;
 
                 // Run the game.
-                script.Init(Console.Out);
+                script!.Init(Console.Out);
                 script.Setup("Welcome to game 2 with late binding", 55, 88);
                 script.RealTime = 500;
 
