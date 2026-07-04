@@ -219,10 +219,9 @@ namespace Ephemera.NScript
                     var msg = diag.GetMessage();
                     var level = Translate(diag.Severity);
 
-                    var sfiles = _scriptFiles.Where(f => f.GeneratedFileName == Path.GetFileName(fileName));
-                    if (sfiles.Any()) // It's a script file.
+                    var sf = _scriptFiles.Where(f => f.GeneratedFileName == Path.GetFileName(fileName)).FirstOrDefault();
+                    if (sf is not null) // It's a script file.
                     {
-                        var sf = sfiles.First();
                         int srcLineNum = sf.GetSourceLineNumber(lineNum);
 
                         if (srcLineNum == -1) // something in user api or compiler, probably
