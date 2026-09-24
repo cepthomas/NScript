@@ -1,0 +1,5 @@
+<Solution>
+  <Project Path="Example/Example.csproj" />
+  <Project Path="Example/Script/Script.csproj" />
+  <Project Path="NScript.csproj" />
+</Solution>
