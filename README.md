@@ -13,7 +13,7 @@ Note it's also possible to do this with an interface.
 Used by [Nebulator](https://github.com/cepthomas/Nebulator/blob/main/README.md)
 and [NProcessing](https://github.com/cepthomas/NProcessing/blob/main/README.md).
 
-Requires VS2022 and .NET8.
+Requires VS2026 and .NET10.
 
 
 # The Files
